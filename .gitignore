@@ -1,0 +1,84 @@
+# ==================== Node.js ====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# ==================== Environment Variables ====================
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# ==================== Logs ====================
+logs/
+*.log
+backend/logs/
+agent/agent.log
+
+# ==================== Build Output ====================
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# ==================== Database & Cache ====================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==================== OS ====================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==================== IDE ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==================== Python ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+agent/__pycache__/
+agent/collectors/__pycache__/
+
+# ==================== Graduation Design (Private) ====================
+# 毕业设计相关文档（包含个人信息，不上传）
+graduation_design/
+蔡轩-22物联01班-长沙学院毕业设计课题申报表(2026届版).xls
+
+# ==================== Temporary Files ====================
+*.tmp
+*.temp
+*.bak
+*.swp
+*~.nib
+
+# ==================== Test Coverage ====================
+coverage/
+.nyc_output/
+
+# ==================== Optional ====================
+# 如果不想上传某些文档，可以取消注释
+# AI_*.md
+# ALERT_*.md
+# NOTIFICATION_*.md
+# REDIS_*.md
+# TEST_*.md
