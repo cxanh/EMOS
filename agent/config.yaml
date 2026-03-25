@@ -1,21 +1,22 @@
-# 节点信息
+# node identity
 node:
   id: node001
   hostname: dev-machine
+  display_name: My Laptop
 
-# 中心服务地址
+# backend service
 server:
   url: http://localhost:50001
   register_endpoint: /api/agent/register
   metrics_endpoint: /api/agent/metrics
 
-# 采集配置
+# collection config
 collection:
-  interval: 1  # 采集间隔(秒)
-  retry: 3     # 重试次数
-  timeout: 5   # 超时时间(秒)
+  interval: 1
+  retry: 3
+  timeout: 5
 
-# 日志配置
+# logging
 logging:
   level: INFO
   file: agent.log

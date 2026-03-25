@@ -6,6 +6,7 @@ const path = require('path');
 
 // Import configuration and services
 const dataStore = require('./services/dataStore');
+const userService = require('./services/userService');
 const metricsWS = require('./websocket/metricsWS');
 const alertService = require('./services/alertService');
 const alertChecker = require('./services/alertChecker');
@@ -21,6 +22,8 @@ const agentRoutes = require('./routes/agent');
 const metricsRoutes = require('./routes/metrics');
 const alertRoutes = require('./routes/alert');
 const aiRoutes = require('./routes/ai');
+const usersRoutes = require('./routes/users');
+const reportsRoutes = require('./routes/reports');
 
 // Create Express app
 const app = express();
@@ -57,6 +60,8 @@ app.use('/api/agent', agentRoutes);
 app.use('/api/metrics', metricsRoutes);
 app.use('/api/alert', alertRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
@@ -75,6 +80,9 @@ async function initialize() {
 
     // Initialize data store
     await dataStore.initialize();
+    
+    // Initialize default admin user
+    await userService.initializeDefaultAdmin();
 
     // Initialize WebSocket
     metricsWS.initialize(server);

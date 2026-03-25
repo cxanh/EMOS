@@ -51,6 +51,24 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/users',
+    name: 'UserManagement',
+    component: () => import('@/views/UserManagement.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/reports',
+    name: 'Reports',
+    component: () => import('@/views/Reports.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/custom-dashboard',
+    name: 'CustomDashboard',
+    component: () => import('@/views/CustomDashboard.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/about',
     name: 'About',
     component: () => import('@/views/About.vue'),
@@ -73,15 +91,27 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
   const requiresAuth = to.meta.requiresAuth;
+  const requiresAdmin = to.meta.requiresAdmin;
 
   if (requiresAuth) {
     // 需要认证的路由
     if (userStore.isLoggedIn) {
+      // 检查是否需要管理员权限
+      if (requiresAdmin && userStore.user?.role !== 'admin') {
+        // 非管理员访问管理员页面，重定向到首页
+        next('/');
+        return;
+      }
       next();
     } else {
       // 尝试验证 token
       const isValid = await userStore.verify();
       if (isValid) {
+        // 检查是否需要管理员权限
+        if (requiresAdmin && userStore.user?.role !== 'admin') {
+          next('/');
+          return;
+        }
         next();
       } else {
         next('/login');

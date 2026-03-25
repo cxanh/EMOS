@@ -3,6 +3,7 @@ import api from './index';
 export interface Agent {
   node_id: string;
   hostname: string;
+  display_name?: string;
   ip: string;
   status: string;
   last_heartbeat: string;
@@ -23,17 +24,14 @@ export interface AgentInfoResponse {
   data: Agent;
 }
 
-// 获取 Agent 列表
 export const getAgentList = () => {
   return api.get<any, AgentListResponse>('/agent/list');
 };
 
-// 获取单个 Agent 信息
 export const getAgentInfo = (nodeId: string) => {
   return api.get<any, AgentInfoResponse>(`/agent/${nodeId}`);
 };
 
-// 删除 Agent
 export const deleteAgent = (nodeId: string) => {
   return api.delete(`/agent/${nodeId}`);
 };

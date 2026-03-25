@@ -6,15 +6,10 @@ class DataStoreService {
     this.initialized = false;
   }
 
-  // 初始化数据存储
   async initialize() {
     try {
-      // 连接 Redis
       await redisClient.connect();
-      
-      // 连接 InfluxDB
       influxClient.connect();
-      
       this.initialized = true;
       console.log('Data Store Service Initialized');
     } catch (error) {
@@ -23,27 +18,34 @@ class DataStoreService {
     }
   }
 
-  // 保存监控数据
-  async saveMetrics(nodeId, hostname, metrics, timestamp) {
+  async saveMetrics(nodeId, payload) {
+    const { hostname, display_name, metrics, timestamp } = payload;
+
     try {
-      // 1. 保存到 Redis (最新数据)
+      const now = timestamp || new Date().toISOString();
+
       await redisClient.setLatestMetrics(nodeId, {
         ...metrics,
-        timestamp: timestamp || new Date().toISOString()
+        timestamp: now
       });
 
-      // 2. 更新节点心跳
       await redisClient.updateHeartbeat(nodeId);
-
-      // 3. 添加到在线节点集合
       await redisClient.addOnlineNode(nodeId);
 
-      // 4. 写入 InfluxDB (历史数据)
+      if (hostname || display_name) {
+        await redisClient.setNodeInfo(nodeId, {
+          node_id: nodeId,
+          hostname: hostname || nodeId,
+          display_name: display_name || hostname || nodeId,
+          updated_at: now
+        });
+      }
+
       await influxClient.writeMetrics(
         nodeId,
-        hostname,
+        hostname || nodeId,
         metrics,
-        timestamp || new Date().toISOString()
+        now
       );
 
       return { success: true };
@@ -53,59 +55,55 @@ class DataStoreService {
     }
   }
 
-  // 获取最新数据
   async getLatestMetrics(nodeId) {
     try {
-      const metrics = await redisClient.getLatestMetrics(nodeId);
-      return metrics;
+      return await redisClient.getLatestMetrics(nodeId);
     } catch (error) {
       console.error('Error getting latest metrics:', error);
       return null;
     }
   }
 
-  // 获取历史数据
   async getHistoryMetrics(nodeId, startTime, endTime, interval = '1m') {
     try {
       const data = await influxClient.queryMetrics(nodeId, startTime, endTime, interval);
-      
-      // 格式化数据
-      const formattedData = this.formatInfluxData(data);
-      return formattedData;
+      return this.formatInfluxData(data);
     } catch (error) {
       console.error('Error getting history metrics:', error);
       return [];
     }
   }
 
-  // 格式化 InfluxDB 数据
   formatInfluxData(data) {
     const grouped = {};
-    
+
     data.forEach(row => {
-      const timestamp = row._time;
-      if (!grouped[timestamp]) {
-        grouped[timestamp] = { timestamp };
+      const time = row._time;
+      if (!grouped[time]) {
+        grouped[time] = { timestamp: time };
       }
-      grouped[timestamp][row._field] = row._value;
+      grouped[time][row._field] = row._value;
     });
 
     return Object.values(grouped);
   }
 
-  // 注册节点
-  async registerNode(nodeId, hostname, ip) {
+  async registerNode(nodeId, payload = {}) {
+    const { hostname, ip, display_name } = payload;
+
     try {
+      const now = new Date().toISOString();
       await redisClient.setNodeInfo(nodeId, {
         node_id: nodeId,
         hostname: hostname || nodeId,
+        display_name: display_name || hostname || nodeId,
         ip: ip || 'unknown',
-        registered_at: new Date().toISOString(),
-        last_heartbeat: new Date().toISOString()
+        registered_at: now,
+        last_heartbeat: now,
+        status: 'online'
       });
 
       await redisClient.addOnlineNode(nodeId);
-
       return { success: true };
     } catch (error) {
       console.error('Error registering node:', error);
@@ -113,7 +111,6 @@ class DataStoreService {
     }
   }
 
-  // 获取节点信息
   async getNodeInfo(nodeId) {
     try {
       return await redisClient.getNodeInfo(nodeId);
@@ -123,7 +120,6 @@ class DataStoreService {
     }
   }
 
-  // 获取所有在线节点
   async getOnlineNodes() {
     try {
       const nodeIds = await redisClient.getOnlineNodes();
@@ -132,10 +128,11 @@ class DataStoreService {
       for (const nodeId of nodeIds) {
         const info = await redisClient.getNodeInfo(nodeId);
         const metrics = await redisClient.getLatestMetrics(nodeId);
-        
+
         nodes.push({
           node_id: nodeId,
           ...info,
+          display_name: info?.display_name || info?.hostname || nodeId,
           latest_metrics: metrics
         });
       }
@@ -147,7 +144,6 @@ class DataStoreService {
     }
   }
 
-  // 移除离线节点
   async removeOfflineNode(nodeId) {
     try {
       await redisClient.removeOnlineNode(nodeId);
@@ -158,7 +154,6 @@ class DataStoreService {
     }
   }
 
-  // 关闭连接
   async close() {
     await redisClient.disconnect();
     await influxClient.disconnect();

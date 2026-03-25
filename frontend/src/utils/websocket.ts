@@ -13,16 +13,16 @@ class WebSocketManager {
 
   connect(token: string) {
     this.token = token;
-    this.url = import.meta.env.VITE_WS_URL || 'ws://localhost:3000/ws/metrics';
+    this.url = import.meta.env.VITE_WS_URL || 'ws://localhost:50001/ws/metrics';
     
-    // 添加 token 到 URL
+    // 添加 token �?URL
     const wsUrl = `${this.url}?token=${token}`;
     
     try {
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
-        console.log('✅ WebSocket connected');
+        console.log('�?WebSocket connected');
         const metricsStore = useMetricsStore();
         metricsStore.setWsConnected(true);
         metricsStore.setWsError('');
@@ -40,7 +40,7 @@ class WebSocketManager {
       };
       
       this.ws.onerror = (error) => {
-        console.error('❌ WebSocket error:', error);
+        console.error('�?WebSocket error:', error);
         const metricsStore = useMetricsStore();
         metricsStore.setWsError('WebSocket connection error');
       };
@@ -64,7 +64,7 @@ class WebSocketManager {
     switch (data.type) {
       case 'connected':
         console.log('WebSocket connected:', data.message);
-        // 订阅所有节点
+        // 订阅所有节�?
         this.subscribeAll();
         break;
         
@@ -128,7 +128,7 @@ class WebSocketManager {
       if (this.ws?.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ type: 'ping' }));
       }
-    }, 30000); // 30秒
+    }, 30000); // 30�?
   }
 
   stopHeartbeat() {
@@ -178,3 +178,4 @@ class WebSocketManager {
 }
 
 export default new WebSocketManager();
+

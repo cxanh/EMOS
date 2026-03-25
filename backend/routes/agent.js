@@ -3,10 +3,9 @@ const router = express.Router();
 const dataStore = require('../services/dataStore');
 const logger = require('../utils/logger');
 
-// Agent 注册
 router.post('/register', async (req, res, next) => {
   try {
-    const { node_id, hostname, ip } = req.body;
+    const { node_id, hostname, ip, display_name } = req.body;
 
     if (!node_id) {
       return res.status(400).json({
@@ -18,7 +17,11 @@ router.post('/register', async (req, res, next) => {
       });
     }
 
-    const result = await dataStore.registerNode(node_id, hostname, ip);
+    const result = await dataStore.registerNode(node_id, {
+      hostname,
+      ip,
+      display_name
+    });
 
     if (result.success) {
       logger.info(`Agent registered: ${node_id}`);
@@ -38,12 +41,10 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// 接收监控数据
 router.post('/metrics', async (req, res, next) => {
   try {
-    const { node_id, hostname, metrics, timestamp } = req.body;
+    const { node_id, hostname, display_name, metrics, timestamp } = req.body;
 
-    // 验证必填字段
     if (!node_id || !metrics) {
       return res.status(400).json({
         success: false,
@@ -54,10 +55,9 @@ router.post('/metrics', async (req, res, next) => {
       });
     }
 
-    // 验证 metrics 字段
     const requiredFields = ['cpu_usage', 'memory_usage', 'disk_usage'];
     const missingFields = requiredFields.filter(field => metrics[field] === undefined);
-    
+
     if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
@@ -68,16 +68,14 @@ router.post('/metrics', async (req, res, next) => {
       });
     }
 
-    // 保存数据
-    const result = await dataStore.saveMetrics(
-      node_id,
-      hostname || node_id,
+    const result = await dataStore.saveMetrics(node_id, {
+      hostname,
+      display_name,
       metrics,
       timestamp
-    );
+    });
 
     if (result.success) {
-      // 通过 WebSocket 推送给前端（如果 WebSocket 服务已启动）
       if (global.wss) {
         global.wss.broadcast({
           type: 'metrics',
@@ -99,7 +97,6 @@ router.post('/metrics', async (req, res, next) => {
   }
 });
 
-// 获取 Agent 列表
 router.get('/list', async (req, res, next) => {
   try {
     const nodes = await dataStore.getOnlineNodes();
@@ -116,7 +113,6 @@ router.get('/list', async (req, res, next) => {
   }
 });
 
-// 获取单个 Agent 信息
 router.get('/:nodeId', async (req, res, next) => {
   try {
     const { nodeId } = req.params;
@@ -141,7 +137,6 @@ router.get('/:nodeId', async (req, res, next) => {
   }
 });
 
-// 移除 Agent
 router.delete('/:nodeId', async (req, res, next) => {
   try {
     const { nodeId } = req.params;

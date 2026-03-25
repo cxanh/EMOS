@@ -34,6 +34,12 @@ const navItems = [
     path: '/dashboard'
   },
   {
+    id: 'custom-dashboard',
+    label: '自定义仪表盘',
+    icon: '🎨',
+    path: '/custom-dashboard'
+  },
+  {
     id: 'alert',
     label: '告警管理',
     icon: '🔔',
@@ -50,6 +56,19 @@ const navItems = [
     label: '网速测试',
     icon: '🌐',
     path: '/network'
+  },
+  {
+    id: 'users',
+    label: '用户管理',
+    icon: '👥',
+    path: '/users',
+    adminOnly: true
+  },
+  {
+    id: 'reports',
+    label: '报表管理',
+    icon: '📋',
+    path: '/reports'
   },
   {
     id: 'settings',
@@ -119,6 +138,7 @@ watch(collapsed, (newValue) => {
       <ul>
         <li
           v-for="item in navItems"
+          v-show="!item.adminOnly || userStore.user?.role === 'admin'"
           :key="item.id"
           class="nav-item"
           :class="{ active: activeItem === item.id }"

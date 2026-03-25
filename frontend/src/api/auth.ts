@@ -5,16 +5,33 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  email?: string;
+  fullName?: string;
+}
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  role: string;
+  email?: string;
+  fullName?: string;
+}
+
 export interface LoginResponse {
   success: boolean;
   data: {
     token: string;
-    user: {
-      id: string;
-      username: string;
-      role: string;
-    };
+    user: AuthUser;
   };
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  data: AuthUser;
+  message: string;
 }
 
 export interface VerifyResponse {
@@ -34,22 +51,22 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-// 用户登录
+export const register = (data: RegisterRequest) => {
+  return api.post<any, RegisterResponse>('/auth/register', data);
+};
+
 export const login = (data: LoginRequest) => {
   return api.post<any, LoginResponse>('/auth/login', data);
 };
 
-// 用户登出
 export const logout = () => {
   return api.post('/auth/logout');
 };
 
-// 验证 token
 export const verifyToken = () => {
   return api.get<any, VerifyResponse>('/auth/verify');
 };
 
-// 修改密码
 export const changePassword = (data: ChangePasswordRequest) => {
   return api.post<any, { success: boolean; message: string }>('/auth/change-password', data);
 };

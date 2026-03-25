@@ -1,19 +1,19 @@
 <template>
   <div class="node-list">
     <div class="list-header">
-      <h3>节点列表</h3>
+      <h3>鑺傜偣鍒楄〃</h3>
       <button @click="refreshNodes" class="refresh-btn" :disabled="loading">
-        {{ loading ? '刷新中...' : '🔄 刷新' }}
+        {{ loading ? '鍒锋柊涓?..' : '馃攧 鍒锋柊' }}
       </button>
     </div>
     
     <div v-if="loading && nodes.length === 0" class="loading">
-      加载中...
+      鍔犺浇涓?..
     </div>
     
     <div v-else-if="nodes.length === 0" class="empty">
-      <p>暂无在线节点</p>
-      <p class="hint">请确保 Agent 正在运行</p>
+      <p>鏆傛棤鍦ㄧ嚎鑺傜偣</p>
+      <p class="hint">璇风‘淇?Agent 姝ｅ湪杩愯</p>
     </div>
     
     <div v-else class="nodes-grid">
@@ -27,7 +27,7 @@
         <div class="node-header">
           <div class="node-status" :class="{ online: node.status === 'online' }"></div>
           <div class="node-info">
-            <div class="node-name">{{ node.hostname }}</div>
+            <div class="node-name">{{ node.display_name || node.hostname }}</div>
             <div class="node-id">{{ node.node_id }}</div>
           </div>
         </div>
@@ -38,11 +38,11 @@
             <span class="metric-value">{{ parseFloat(node.latest_metrics.cpu_usage || 0).toFixed(1) }}%</span>
           </div>
           <div class="metric-item">
-            <span class="metric-label">内存:</span>
+            <span class="metric-label">鍐呭瓨:</span>
             <span class="metric-value">{{ parseFloat(node.latest_metrics.memory_usage || 0).toFixed(1) }}%</span>
           </div>
           <div class="metric-item">
-            <span class="metric-label">磁盘:</span>
+            <span class="metric-label">纾佺洏:</span>
             <span class="metric-value">{{ parseFloat(node.latest_metrics.disk_usage || 0).toFixed(1) }}%</span>
           </div>
         </div>
@@ -74,14 +74,14 @@ const selectNode = (nodeId: string) => {
 };
 
 const formatTime = (timestamp: string) => {
-  if (!timestamp) return '未知';
+  if (!timestamp) return 'Unknown';
   const date = new Date(timestamp);
   const now = new Date();
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diff < 60) return `${diff}秒前`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
+
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return date.toLocaleString();
 };
 </script>

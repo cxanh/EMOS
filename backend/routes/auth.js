@@ -1,21 +1,84 @@
 const express = require('express');
-const router = express.Router();
 const bcrypt = require('bcrypt');
-const { generateToken } = require('../middleware/auth');
+const router = express.Router();
+const { authenticateToken, generateToken } = require('../middleware/auth');
+const userService = require('../services/userService');
 const logger = require('../utils/logger');
 
-// 模拟用户数据库（实际项目中应使用真实数据库）
-const users = [
-  {
-    id: 'user001',
-    username: 'admin',
-    // 密码: admin (已加密)
-    password: '$2b$10$rKvVPZqGvVZqGvVZqGvVZO7K5YqGvVZqGvVZqGvVZqGvVZqGvVZqG',
-    role: 'admin'
-  }
-];
+router.post('/register', async (req, res, next) => {
+  try {
+    const { username, password, email, fullName } = req.body;
 
-// 用户登录
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'MISSING_FIELDS',
+          message: 'Username and password are required'
+        }
+      });
+    }
+
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_USERNAME',
+          message: 'Username must be 3-20 characters and contain only letters, numbers, and underscores'
+        }
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'WEAK_PASSWORD',
+          message: 'Password must be at least 6 characters long'
+        }
+      });
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_EMAIL',
+          message: 'Invalid email format'
+        }
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await userService.createUser({
+      username,
+      password: hashedPassword,
+      role: userService.ROLES.VIEWER,
+      email,
+      fullName
+    });
+
+    logger.info(`User self-registered: ${username}`);
+
+    res.status(201).json({
+      success: true,
+      data: user,
+      message: 'Account created successfully'
+    });
+  } catch (error) {
+    if (error.message === 'Username already exists' || error.message === 'Email already exists') {
+      return res.status(409).json({
+        success: false,
+        error: {
+          code: 'CONFLICT',
+          message: error.message
+        }
+      });
+    }
+    next(error);
+  }
+});
+
 router.post('/login', async (req, res, next) => {
   try {
     const { username, password } = req.body;
@@ -30,8 +93,7 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    // 查找用户
-    const user = users.find(u => u.username === username);
+    const user = await userService.getUserByUsername(username);
 
     if (!user) {
       logger.warn(`Login attempt with invalid username: ${username}`);
@@ -44,9 +106,18 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    // 简单密码验证（开发环境）
-    // 实际项目中应使用 bcrypt.compare
-    const isValidPassword = password === 'admin' || await bcrypt.compare(password, user.password);
+    if (user.status === 'disabled') {
+      logger.warn(`Login attempt with disabled account: ${username}`);
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'ACCOUNT_DISABLED',
+          message: 'Your account has been disabled'
+        }
+      });
+    }
+
+    const isValidPassword = await userService.verifyPassword(user.id, password);
 
     if (!isValidPassword) {
       logger.warn(`Login attempt with invalid password for user: ${username}`);
@@ -59,7 +130,8 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    // 生成 JWT Token
+    await userService.updateLastLogin(user.id);
+
     const token = generateToken({
       user_id: user.id,
       username: user.username,
@@ -75,7 +147,9 @@ router.post('/login', async (req, res, next) => {
         user: {
           id: user.id,
           username: user.username,
-          role: user.role
+          role: user.role,
+          email: user.email,
+          fullName: user.fullName
         }
       }
     });
@@ -84,21 +158,16 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-// 用户登出
 router.post('/logout', (req, res) => {
-  // JWT 是无状态的，登出主要在客户端删除 token
-  // 这里可以记录登出日志
   logger.info('User logged out');
-  
   res.json({
     success: true,
     message: 'Logged out successfully'
   });
 });
 
-// 验证 token
 router.get('/verify', (req, res) => {
-  const authHeader = req.headers['authorization'];
+  const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
@@ -114,7 +183,7 @@ router.get('/verify', (req, res) => {
   try {
     const jwt = require('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     res.json({
       success: true,
       data: {
@@ -133,12 +202,10 @@ router.get('/verify', (req, res) => {
   }
 });
 
-// 修改密码
-router.post('/change-password', async (req, res, next) => {
+router.post('/change-password', authenticateToken, async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body;
-    
-    // 验证必填字段
+
     if (!oldPassword || !newPassword) {
       return res.status(400).json({
         success: false,
@@ -148,8 +215,7 @@ router.post('/change-password', async (req, res, next) => {
         }
       });
     }
-    
-    // 验证新密码强度
+
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
@@ -159,27 +225,9 @@ router.post('/change-password', async (req, res, next) => {
         }
       });
     }
-    
-    // 从token获取用户信息
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          code: 'NO_TOKEN',
-          message: 'Authentication required'
-        }
-      });
-    }
-    
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // 查找用户
-    const user = users.find(u => u.username === decoded.username);
-    
+
+    const user = await userService.getUserById(req.user.user_id);
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -189,10 +237,9 @@ router.post('/change-password', async (req, res, next) => {
         }
       });
     }
-    
-    // 验证旧密码
-    const isValidOldPassword = oldPassword === 'admin' || await bcrypt.compare(oldPassword, user.password);
-    
+
+    const isValidOldPassword = await userService.verifyPassword(user.id, oldPassword);
+
     if (!isValidOldPassword) {
       logger.warn(`Failed password change attempt for user: ${user.username}`);
       return res.status(401).json({
@@ -203,15 +250,11 @@ router.post('/change-password', async (req, res, next) => {
         }
       });
     }
-    
-    // 加密新密码
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
-    // 更新密码
-    user.password = hashedPassword;
-    
+
+    await userService.updatePassword(user.id, newPassword);
+
     logger.info(`Password changed for user: ${user.username}`);
-    
+
     res.json({
       success: true,
       message: 'Password changed successfully'
