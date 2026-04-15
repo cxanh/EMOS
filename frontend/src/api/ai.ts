@@ -1,4 +1,3 @@
-import request from './index'
 import axios from 'axios'
 
 // 创建一个专门用于AI请求的axios实例，超时时间更长
@@ -97,17 +96,17 @@ export interface Recommendations {
 
 // Get AI service status
 export const getAIStatus = () => {
-  return aiRequest.get<{ success: boolean; data: AIStatus }>('/ai/status')
+  return aiRequest.get<any, { success: boolean; data: AIStatus }>('/ai/status')
 }
 
 // Analyze system health
 export const analyzeSystemHealth = () => {
-  return aiRequest.post<{ success: boolean; data: HealthAnalysis }>('/ai/analyze/health')
+  return aiRequest.post<any, { success: boolean; data: HealthAnalysis }>('/ai/analyze/health')
 }
 
 // Analyze performance trend
 export const analyzeTrend = (nodeId: string, timeRange: string = '24h') => {
-  return aiRequest.post<{ success: boolean; data: TrendAnalysis }>('/ai/analyze/trend', {
+  return aiRequest.post<any, { success: boolean; data: TrendAnalysis }>('/ai/analyze/trend', {
     nodeId,
     timeRange
   })
@@ -115,5 +114,5 @@ export const analyzeTrend = (nodeId: string, timeRange: string = '24h') => {
 
 // Get optimization recommendations
 export const getRecommendations = () => {
-  return aiRequest.post<{ success: boolean; data: Recommendations }>('/ai/analyze/recommendations')
+  return aiRequest.post<any, { success: boolean; data: Recommendations }>('/ai/analyze/recommendations')
 }

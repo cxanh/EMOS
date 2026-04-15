@@ -12,6 +12,14 @@ class ReportService {
       MONTHLY: 'monthly',
       CUSTOM: 'custom'
     };
+    this.METRIC_ALIASES = {
+      cpu: ['cpu_usage', 'cpu'],
+      memory: ['memory_usage', 'memory'],
+      disk: ['disk_usage', 'disk'],
+      network_in: ['network_rx_bytes', 'network_in', 'network_recv'],
+      network_out: ['network_tx_bytes', 'network_out', 'network_sent'],
+      network: ['network_rx_bytes', 'network_tx_bytes', 'network']
+    };
   }
 
   // 生成报表
@@ -91,13 +99,14 @@ class ReportService {
   // 格式化历史数据
   formatHistoryData(data, metrics) {
     const grouped = {};
+    const metricFilter = this.buildMetricFieldFilter(metrics);
     
     data.forEach(row => {
       const timestamp = row._time;
       const field = row._field;
       
       // 只包含请求的指标
-      if (!metrics || metrics.includes(field)) {
+      if (!metricFilter || metricFilter.has(field)) {
         if (!grouped[timestamp]) {
           grouped[timestamp] = { timestamp };
         }
@@ -106,6 +115,24 @@ class ReportService {
     });
 
     return Object.values(grouped);
+  }
+
+  buildMetricFieldFilter(metrics) {
+    if (!metrics || metrics.length === 0) {
+      return null;
+    }
+
+    const resolvedFields = new Set();
+    for (const metric of metrics) {
+      const aliases = this.METRIC_ALIASES[metric];
+      if (aliases && aliases.length > 0) {
+        aliases.forEach(field => resolvedFields.add(field));
+      } else {
+        resolvedFields.add(metric);
+      }
+    }
+
+    return resolvedFields;
   }
 
   // 计算统计信息
@@ -124,11 +151,11 @@ class ReportService {
       const metrics = nodeData.metrics || [];
       const stats = {
         dataPoints: metrics.length,
-        cpu: this.calculateMetricStats(metrics, 'cpu'),
-        memory: this.calculateMetricStats(metrics, 'memory'),
-        disk: this.calculateMetricStats(metrics, 'disk'),
-        network_in: this.calculateMetricStats(metrics, 'network_in'),
-        network_out: this.calculateMetricStats(metrics, 'network_out')
+        cpu: this.calculateMetricStats(metrics, this.METRIC_ALIASES.cpu),
+        memory: this.calculateMetricStats(metrics, this.METRIC_ALIASES.memory),
+        disk: this.calculateMetricStats(metrics, this.METRIC_ALIASES.disk),
+        network_in: this.calculateMetricStats(metrics, this.METRIC_ALIASES.network_in),
+        network_out: this.calculateMetricStats(metrics, this.METRIC_ALIASES.network_out)
       };
 
       statistics.nodeStatistics[nodeId] = stats;
@@ -138,9 +165,17 @@ class ReportService {
   }
 
   // 计算单个指标的统计信息
-  calculateMetricStats(data, metricName) {
+  calculateMetricStats(data, metricNames) {
+    const aliases = Array.isArray(metricNames) ? metricNames : [metricNames];
     const values = data
-      .map(d => d[metricName])
+      .map((point) => {
+        for (const field of aliases) {
+          if (point[field] !== undefined && point[field] !== null) {
+            return point[field];
+          }
+        }
+        return undefined;
+      })
       .filter(v => v !== undefined && v !== null);
 
     if (values.length === 0) {

@@ -246,10 +246,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getAllReports, generateReport, generatePredefinedReport, deleteReport, getReport, type Report } from '../api/report';
-import { getAgentList } from '../api/agent';
+import { getAgentList, type Agent } from '../api/agent';
 
 const reports = ref<Report[]>([]);
-const availableNodes = ref<any[]>([]);
+const availableNodes = ref<Agent[]>([]);
 const loading = ref(false);
 const error = ref('');
 
@@ -291,7 +291,7 @@ async function loadReports() {
 async function loadNodes() {
   try {
     const response = await getAgentList();
-    availableNodes.value = response.data;
+    availableNodes.value = response.data.agents;
   } catch (err) {
     console.error('Failed to load nodes:', err);
   }

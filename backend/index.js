@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
-const path = require('path');
 
 // Import configuration and services
 const dataStore = require('./services/dataStore');
@@ -15,6 +14,8 @@ const dingtalkService = require('./services/dingtalkService');
 const aiService = require('./services/aiService');
 const logger = require('./utils/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { resolveServerBinding } = require('./config/serverConfig');
+const { authenticateToken } = require('./middleware/auth');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -22,98 +23,95 @@ const agentRoutes = require('./routes/agent');
 const metricsRoutes = require('./routes/metrics');
 const alertRoutes = require('./routes/alert');
 const aiRoutes = require('./routes/ai');
+const { createAiV2Router } = require('./routes/aiV2');
 const usersRoutes = require('./routes/users');
 const reportsRoutes = require('./routes/reports');
 
-// Create Express app
-const app = express();
-const server = http.createServer(app);
+function createApp({ skipRequestLogging = false } = {}) {
+  const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-// Request logging
-app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url}`);
-  next();
-});
+  if (!skipRequestLogging) {
+    app.use((req, res, next) => {
+      logger.info(`${req.method} ${req.url}`);
+      next();
+    });
+  }
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      redis: dataStore.initialized,
-      websocket: metricsWS.getConnectionCount()
-    }
+  app.get('/health', (req, res) => {
+    res.json({
+      success: true,
+      data: {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        redis: dataStore.initialized,
+        websocket: metricsWS.getConnectionCount()
+      }
+    });
   });
-});
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/agent', agentRoutes);
-app.use('/api/metrics', metricsRoutes);
-app.use('/api/alert', alertRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/reports', reportsRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/agent', agentRoutes);
+  app.use('/api/metrics', metricsRoutes);
+  app.use('/api/alert', alertRoutes);
+  app.use('/api/ai', aiRoutes);
+  app.use('/api/ai/v2', createAiV2Router({
+    authenticateRequest: authenticateToken
+  }));
+  app.use('/api/users', usersRoutes);
+  app.use('/api/reports', reportsRoutes);
 
-// 404 handler
-app.use(notFoundHandler);
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
-// Error handler
-app.use(errorHandler);
+  return app;
+}
+
+let app;
+let server;
+
+function ensureServer() {
+  if (!app) {
+    app = createApp();
+  }
+
+  if (!server) {
+    server = http.createServer(app);
+  }
+
+  return { app, server };
+}
 
 // Initialize services
 async function initialize() {
+  const current = ensureServer();
+
   try {
-    // Create logs directory
     const fs = require('fs');
     if (!fs.existsSync('logs')) {
       fs.mkdirSync('logs');
     }
 
-    // Initialize data store
     await dataStore.initialize();
-    
-    // Initialize default admin user
     await userService.initializeDefaultAdmin();
-
-    // Initialize WebSocket
-    metricsWS.initialize(server);
-    
-    // Mount WebSocket server globally for routes
+    metricsWS.initialize(current.server);
     global.wss = metricsWS;
-
-    // Initialize alert service
     await alertService.initialize();
-    
-    // Initialize email service
     await emailService.initialize();
-    
-    // Initialize DingTalk service
     dingtalkService.initialize();
-    
-    // Initialize AI service
     aiService.initialize();
-    
-    // Start alert checker
     alertChecker.start();
 
-    // Start server
-    const PORT = process.env.PORT || 3000;
-    const HOST = process.env.HOST || '127.0.0.1';
-    server.listen(PORT, HOST, () => {
-      logger.info(`EOMS Backend Server running on http://${HOST}:${PORT}`);
+    const { port, host } = resolveServerBinding(process.env);
+    current.server.listen(port, host, () => {
+      logger.info(`EOMS Backend Server running on http://${host}:${port}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`WebSocket available at ws://${HOST}:${PORT}/ws/metrics`);
+      logger.info(`WebSocket available at ws://${host}:${port}/ws/metrics`);
     });
-
   } catch (error) {
     logger.error('Failed to initialize server:', error);
     process.exit(1);
@@ -123,6 +121,10 @@ async function initialize() {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
+  if (!server) {
+    process.exit(0);
+  }
+
   server.close(async () => {
     logger.info('HTTP server closed');
     alertChecker.stop();
@@ -134,6 +136,10 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT signal received: closing HTTP server');
+  if (!server) {
+    process.exit(0);
+  }
+
   server.close(async () => {
     logger.info('HTTP server closed');
     alertChecker.stop();
@@ -143,5 +149,11 @@ process.on('SIGINT', async () => {
   });
 });
 
-// Start application
-initialize();
+if (require.main === module) {
+  initialize();
+}
+
+module.exports = {
+  createApp,
+  initialize
+};

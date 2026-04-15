@@ -73,6 +73,15 @@ const history = computed(() => {
   return metricsStore.metricsHistory[props.nodeId] || []
 })
 
+const getLastTwo = () => {
+  if (history.value.length < 2) {
+    return { current: null, previous: null };
+  }
+  const current = history.value[history.value.length - 1];
+  const previous = history.value[history.value.length - 2];
+  return { current, previous };
+};
+
 const cpuValue = computed(() => {
   return latestMetrics.value?.cpu?.toFixed(1) || 0
 })
@@ -93,31 +102,35 @@ const networkValue = computed(() => {
 
 // 计算趋势（与前一个数据点比较）
 const cpuTrend = computed(() => {
-  if (history.value.length < 2) return 0
-  const current = history.value[history.value.length - 1].cpu || 0
-  const previous = history.value[history.value.length - 2].cpu || 0
-  return current - previous
+  const { current, previous } = getLastTwo()
+  if (!current || !previous) return 0
+  const currentValue = current.cpu || 0
+  const previousValue = previous.cpu || 0
+  return currentValue - previousValue
 })
 
 const memoryTrend = computed(() => {
-  if (history.value.length < 2) return 0
-  const current = history.value[history.value.length - 1].memory || 0
-  const previous = history.value[history.value.length - 2].memory || 0
-  return current - previous
+  const { current, previous } = getLastTwo()
+  if (!current || !previous) return 0
+  const currentValue = current.memory || 0
+  const previousValue = previous.memory || 0
+  return currentValue - previousValue
 })
 
 const diskTrend = computed(() => {
-  if (history.value.length < 2) return 0
-  const current = history.value[history.value.length - 1].disk || 0
-  const previous = history.value[history.value.length - 2].disk || 0
-  return current - previous
+  const { current, previous } = getLastTwo()
+  if (!current || !previous) return 0
+  const currentValue = current.disk || 0
+  const previousValue = previous.disk || 0
+  return currentValue - previousValue
 })
 
 const networkTrend = computed(() => {
-  if (history.value.length < 2) return 0
-  const current = (history.value[history.value.length - 1].network_recv + history.value[history.value.length - 1].network_sent) / 1024 / 1024
-  const previous = (history.value[history.value.length - 2].network_recv + history.value[history.value.length - 2].network_sent) / 1024 / 1024
-  return current - previous
+  const { current, previous } = getLastTwo()
+  if (!current || !previous) return 0
+  const currentValue = (current.network_recv + current.network_sent) / 1024 / 1024
+  const previousValue = (previous.network_recv + previous.network_sent) / 1024 / 1024
+  return currentValue - previousValue
 })
 
 const getTrendClass = (trend: number) => {

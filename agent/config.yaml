@@ -1,14 +1,15 @@
 # node identity
 node:
-  id: node001
+  id: node002
   hostname: dev-machine
-  display_name: My Laptop
+  display_name: cxan
 
 # backend service
 server:
-  url: http://localhost:50001
+  url: http://192.168.21.12:50001
   register_endpoint: /api/agent/register
   metrics_endpoint: /api/agent/metrics
+  agent_token: CHANGE_ME_AGENT_TOKEN
 
 # collection config
 collection:

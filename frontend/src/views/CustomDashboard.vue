@@ -77,8 +77,8 @@
             <label>选择节点</label>
             <select v-model="newWidget.nodeId" class="form-control">
               <option value="">所有节点</option>
-              <option v-for="node in nodes" :key="node.id" :value="node.id">
-                {{ node.name }}
+              <option v-for="node in nodes" :key="node.node_id" :value="node.node_id">
+                {{ node.display_name || node.hostname || node.node_id }}
               </option>
             </select>
           </div>
@@ -101,9 +101,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useNodesStore } from '@/stores/nodes'
-import { useMetricsStore } from '@/stores/metrics'
 import CPUGaugeWidget from '@/components/widgets/CPUGaugeWidget.vue'
 import MemoryGaugeWidget from '@/components/widgets/MemoryGaugeWidget.vue'
 import DiskPieWidget from '@/components/widgets/DiskPieWidget.vue'
@@ -112,7 +111,6 @@ import SystemRadarWidget from '@/components/widgets/SystemRadarWidget.vue'
 import StatsCardWidget from '@/components/widgets/StatsCardWidget.vue'
 
 const nodesStore = useNodesStore()
-const metricsStore = useMetricsStore()
 
 const nodes = computed(() => nodesStore.nodes)
 const editMode = ref(false)

@@ -115,11 +115,12 @@ class AIService {
       }
 
       // Query historical data
-      const metrics = await influxClient.queryMetrics({
+      const metrics = await influxClient.queryMetrics(
         nodeId,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString()
-      });
+        startTime.toISOString(),
+        endTime.toISOString(),
+        '1h'
+      );
 
       // Build prompt
       const prompt = this.buildTrendAnalysisPrompt({
