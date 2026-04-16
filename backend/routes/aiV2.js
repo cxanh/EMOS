@@ -38,26 +38,37 @@ function createDefaultOrchestrator() {
       incidentTimelineService
     }),
     actionAudit: createActionAudit({
-      redisClient: redisClient.client
+      redisClient: () => redisClient.client
     }),
     actionRequestStore: createActionRequestStore({
-      redisClient: redisClient.client
+      redisClient: () => redisClient.client
     })
   });
 }
 
 function getActor(req) {
-  if (!req.user || !req.user.id || !req.user.role) {
+  const user = req.user || {};
+  const actorId = user.id || user.user_id;
+  const actorRole = user.role;
+  const actorUsername = user.username || user.name || '';
+
+  if (!actorId || !actorRole) {
     const error = new Error('Authenticated user is required');
     error.code = 'UNAUTHENTICATED';
     error.statusCode = 401;
     throw error;
   }
 
-  return {
-    id: req.user.id,
-    role: req.user.role
+  const actor = {
+    id: actorId,
+    role: actorRole
   };
+
+  if (actorUsername) {
+    actor.username = actorUsername;
+  }
+
+  return actor;
 }
 
 function createAiV2Router({

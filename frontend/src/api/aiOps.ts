@@ -1,39 +1,4 @@
-import axios from 'axios'
-
-const aiOpsRequest = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:50001/api',
-  timeout: 60000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
-
-aiOpsRequest.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
-
-aiOpsRequest.interceptors.response.use(
-  (response) => {
-    return response.data
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/'
-    }
-    return Promise.reject(error)
-  }
-)
+import api from '@/api'
 
 export type ActionId =
   | 'acknowledge_alert'
@@ -179,7 +144,7 @@ export interface TimelineEvent {
 }
 
 export const createActionRequest = (input: ActionRequestInput) => {
-  return aiOpsRequest.post<
+  return api.post<
     any,
     {
       success: boolean
@@ -193,7 +158,7 @@ export const createActionRequest = (input: ActionRequestInput) => {
 }
 
 export const confirmActionRequest = (requestId: string) => {
-  return aiOpsRequest.post<
+  return api.post<
     any,
     {
       success: boolean
@@ -206,13 +171,13 @@ export const confirmActionRequest = (requestId: string) => {
 }
 
 export const getActionRequest = (requestId: string) => {
-  return aiOpsRequest.get<any, { success: boolean; data: ActionRequestRecord }>(
+  return api.get<any, { success: boolean; data: ActionRequestRecord }>(
     `/ai/v2/action-requests/${requestId}`
   )
 }
 
 export const getActionTimeline = (requestId: string) => {
-  return aiOpsRequest.get<
+  return api.get<
     any,
     {
       success: boolean

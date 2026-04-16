@@ -10,6 +10,22 @@ function serializeAuditValue(value) {
   return String(value);
 }
 
+function resolveRedisClient(redisClient) {
+  const resolved = typeof redisClient === 'function'
+    ? redisClient()
+    : redisClient && redisClient.client
+      ? redisClient.client
+      : redisClient;
+
+  if (!resolved) {
+    const error = new Error('AI Ops Redis client not initialized');
+    error.code = 'AI_OPS_REDIS_NOT_INITIALIZED';
+    throw error;
+  }
+
+  return resolved;
+}
+
 function createActionAudit({
   redisClient,
   now = () => new Date().toISOString(),
@@ -19,6 +35,7 @@ function createActionAudit({
 
   return {
     async record(event) {
+      const client = resolveRedisClient(redisClient);
       sequence += 1;
 
       const eventId = eventIdFactory
@@ -34,10 +51,10 @@ function createActionAudit({
       const key = `ai:v2:audit:event:${eventId}`;
 
       for (const [field, value] of Object.entries(payload)) {
-        await redisClient.hSet(key, field, serializeAuditValue(value));
+        await client.hSet(key, field, serializeAuditValue(value));
       }
 
-      await redisClient.zAdd('ai:v2:audit:events', {
+      await client.zAdd('ai:v2:audit:events', {
         score: sequence,
         value: eventId
       });

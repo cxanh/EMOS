@@ -31,20 +31,37 @@ function deserializeField(field, value) {
   return value;
 }
 
+function resolveRedisClient(redisClient) {
+  const resolved = typeof redisClient === 'function'
+    ? redisClient()
+    : redisClient && redisClient.client
+      ? redisClient.client
+      : redisClient;
+
+  if (!resolved) {
+    const error = new Error('AI Ops Redis client not initialized');
+    error.code = 'AI_OPS_REDIS_NOT_INITIALIZED';
+    throw error;
+  }
+
+  return resolved;
+}
+
 function createActionRequestStore({
   redisClient,
   now = () => new Date().toISOString()
 }) {
   return {
     async createRequest(request) {
+      const client = resolveRedisClient(redisClient);
       const key = `ai:v2:action:request:${request.requestId}`;
 
       for (const [field, value] of Object.entries(request)) {
-        await redisClient.hSet(key, field, serializeField(field, value));
+        await client.hSet(key, field, serializeField(field, value));
       }
 
       if (request.idempotencyKey) {
-        await redisClient.set(
+        await client.set(
           `ai:v2:action:idempotency:${request.idempotencyKey}`,
           request.requestId
         );
@@ -69,7 +86,8 @@ function createActionRequestStore({
       return next;
     },
     async getRequest(requestId) {
-      const stored = await redisClient.hGetAll(
+      const client = resolveRedisClient(redisClient);
+      const stored = await client.hGetAll(
         `ai:v2:action:request:${requestId}`
       );
 
@@ -86,7 +104,8 @@ function createActionRequestStore({
       return request;
     },
     async getRequestByIdempotencyKey(idempotencyKey) {
-      const requestId = await redisClient.get(
+      const client = resolveRedisClient(redisClient);
+      const requestId = await client.get(
         `ai:v2:action:idempotency:${idempotencyKey}`
       );
 
@@ -97,7 +116,8 @@ function createActionRequestStore({
       return this.getRequest(requestId);
     },
     async appendTimelineEvent(requestId, event) {
-      await redisClient.rPush(
+      const client = resolveRedisClient(redisClient);
+      await client.rPush(
         `ai:v2:action:timeline:${requestId}`,
         JSON.stringify(event)
       );
@@ -105,7 +125,8 @@ function createActionRequestStore({
       return event;
     },
     async getTimeline(requestId) {
-      const values = await redisClient.lRange(
+      const client = resolveRedisClient(redisClient);
+      const values = await client.lRange(
         `ai:v2:action:timeline:${requestId}`,
         0,
         -1
