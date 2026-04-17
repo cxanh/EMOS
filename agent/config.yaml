@@ -6,7 +6,7 @@ node:
 
 # backend service
 server:
-  url: http://192.168.21.12:50001
+  url: http://192.168.134.12:50001
   register_endpoint: /api/agent/register
   metrics_endpoint: /api/agent/metrics
   agent_token: CHANGE_ME_AGENT_TOKEN

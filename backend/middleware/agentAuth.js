@@ -35,6 +35,15 @@ function extractAgentToken(req) {
 function authenticateAgentToken(req, res, next) {
   const configuredToken = String(process.env.AGENT_API_TOKEN || '').trim();
   if (!configuredToken) {
+    const allowInsecureAgent =
+      process.env.NODE_ENV === 'development' ||
+      String(process.env.ALLOW_INSECURE_AGENT || '').trim() === 'true';
+
+    if (allowInsecureAgent) {
+      logger.warn('AGENT_API_TOKEN is not configured, allowing agent request in development mode');
+      return next();
+    }
+
     logger.error('AGENT_API_TOKEN is not configured, rejecting agent request');
     return res.status(503).json({
       success: false,

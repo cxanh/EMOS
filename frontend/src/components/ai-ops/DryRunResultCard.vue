@@ -1,41 +1,33 @@
 <template>
   <div class="dry-run-card">
-    <div v-if="!dryRun" class="empty">暂无 dry-run 结果</div>
+    <template v-if="dryRun">
+      <div class="card-row"><strong>Allowed:</strong> {{ dryRun.allowed }}</div>
+      <div class="card-row"><strong>Risk:</strong> {{ dryRun.riskLevel }}</div>
 
-    <div v-else class="content">
-      <div class="row">
-        <span class="label">allowed</span>
-        <span class="value" :class="dryRun.allowed ? 'ok' : 'fail'">
-          {{ dryRun.allowed }}
-        </span>
-      </div>
-      <div class="row">
-        <span class="label">riskLevel</span>
-        <span class="value">{{ dryRun.riskLevel }}</span>
-      </div>
-
-      <div class="section">
-        <div class="section-title">warnings</div>
-        <ul v-if="dryRun.warnings && dryRun.warnings.length" class="list">
-          <li v-for="(warning, index) in dryRun.warnings" :key="index">{{ warning }}</li>
+      <div class="card-section">
+        <div class="section-title">Warnings</div>
+        <ul v-if="dryRun.warnings.length" class="list">
+          <li v-for="(item, index) in dryRun.warnings" :key="index">{{ item }}</li>
         </ul>
-        <div v-else class="muted">无</div>
+        <div v-else class="empty">No warnings.</div>
       </div>
 
-      <div class="section">
-        <div class="section-title">impact</div>
-        <div class="muted">{{ dryRun.impact.summary }}</div>
-        <div class="impact-meta">
-          <span>entities: {{ dryRun.impact.entities.join(', ') || '-' }}</span>
-          <span>estimatedDurationSec: {{ dryRun.impact.estimatedDurationSec }}</span>
-        </div>
+      <div class="card-section">
+        <div class="section-title">Impact</div>
+        <div class="card-row"><strong>Entities:</strong> {{ dryRun.impact.entities.join(', ') || '-' }}</div>
+        <div class="card-row"><strong>Duration:</strong> {{ dryRun.impact.estimatedDurationSec }}s</div>
+        <div class="card-row"><strong>Summary:</strong> {{ dryRun.impact.summary }}</div>
       </div>
 
-      <div class="section">
-        <div class="section-title">resolvedParams</div>
-        <pre class="code">{{ resolvedParams }}</pre>
+      <div class="card-section">
+        <div class="section-title">Resolved Params</div>
+        <pre class="code-block">{{ formattedResolvedParams }}</pre>
       </div>
-    </div>
+    </template>
+
+    <template v-else>
+      <div class="empty">No dry-run data yet.</div>
+    </template>
   </div>
 </template>
 
@@ -47,88 +39,51 @@ const props = defineProps<{
   dryRun: DryRunResult | null
 }>()
 
-const resolvedParams = computed(() => {
+const formattedResolvedParams = computed(() => {
   if (!props.dryRun) {
     return '{}'
   }
-  return JSON.stringify(props.dryRun.resolvedParams, null, 2)
+  return JSON.stringify(props.dryRun.resolvedParams ?? {}, null, 2)
 })
 </script>
 
 <style scoped>
 .dry-run-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 12px;
-  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
 }
 
-.empty {
-  color: #7f8c8d;
-  font-size: 13px;
+.card-row {
+  margin-bottom: 8px;
+  color: #111827;
 }
 
-.row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-
-.label {
-  color: #7f8c8d;
-}
-
-.value {
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.value.ok {
-  color: #2e7d32;
-}
-
-.value.fail {
-  color: #c62828;
-}
-
-.section {
-  margin-top: 10px;
+.card-section {
+  margin-top: 12px;
 }
 
 .section-title {
-  font-size: 12px;
-  color: #7f8c8d;
-  margin-bottom: 4px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #111827;
 }
 
 .list {
-  padding-left: 18px;
   margin: 0;
-  color: #555;
-  font-size: 13px;
+  padding-left: 18px;
 }
 
-.muted {
-  font-size: 13px;
-  color: #555;
-}
-
-.impact-meta {
-  margin-top: 4px;
-  display: flex;
-  gap: 12px;
+.code-block {
+  background: #f9fafb;
+  padding: 10px;
+  border-radius: 6px;
   font-size: 12px;
-  color: #555;
-}
-
-.code {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 8px;
-  font-size: 12px;
-  color: #2c3e50;
-  border: 1px solid #e0e0e0;
   overflow-x: auto;
+}
+
+.empty {
+  color: #6b7280;
 }
 </style>

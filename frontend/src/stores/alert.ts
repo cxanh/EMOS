@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { AlertRule, AlertEvent, CreateRuleRequest, UpdateRuleRequest, AlertHistoryQuery } from '@/api/alert'
+import type { AlertRule, AlertEvent as ApiAlertEvent, CreateRuleRequest, UpdateRuleRequest, AlertHistoryQuery } from '@/api/alert'
 import * as alertApi from '@/api/alert'
+
+type AlertEvent = Omit<ApiAlertEvent, 'currentValue' | 'threshold' | 'triggeredAt'> & {
+  currentValue: number | null
+  threshold: number | null
+  triggeredAt: string | null
+}
 
 export const useAlertStore = defineStore('alert', () => {
   // State
@@ -15,6 +21,41 @@ export const useAlertStore = defineStore('alert', () => {
   const activeAlertCount = computed(() => activeEvents.value.length)
   const enabledRules = computed(() => rules.value.filter(r => r.enabled))
   const disabledRules = computed(() => rules.value.filter(r => !r.enabled))
+
+  const normalizeFiniteNumber = (value: unknown): number | null => {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (!trimmed) return null
+
+      const numericValue = Number(trimmed)
+      return Number.isFinite(numericValue) ? numericValue : null
+    }
+
+    return null
+  }
+
+  const normalizeTimestamp = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null
+
+    const trimmed = value.trim()
+    if (!trimmed) return null
+
+    return Number.isNaN(new Date(trimmed).getTime()) ? null : trimmed
+  }
+
+  const normalizeAlertEvent = (event: any): AlertEvent => ({
+    ...event,
+    currentValue: normalizeFiniteNumber(event.currentValue),
+    threshold: normalizeFiniteNumber(event.threshold),
+    triggeredAt: normalizeTimestamp(event.triggeredAt),
+    resolvedAt: typeof event.resolvedAt === 'string' && event.resolvedAt.trim()
+      ? event.resolvedAt
+      : null
+  })
 
   // Actions - Rules
   const fetchRules = async () => {
@@ -128,7 +169,7 @@ export const useAlertStore = defineStore('alert', () => {
       error.value = null
       const response = await alertApi.getActiveAlerts()
       if (response.success && response.data?.events) {
-        activeEvents.value = response.data.events
+        activeEvents.value = response.data.events.map(normalizeAlertEvent)
       }
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch active alerts'
@@ -144,7 +185,7 @@ export const useAlertStore = defineStore('alert', () => {
       error.value = null
       const response = await alertApi.getAlertHistory(query)
       if (response.success && response.data?.events) {
-        historyEvents.value = response.data.events
+        historyEvents.value = response.data.events.map(normalizeAlertEvent)
       }
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch alert history'
@@ -192,7 +233,7 @@ export const useAlertStore = defineStore('alert', () => {
   const handleAlertMessage = (data: any) => {
     if (data.action === 'triggered') {
       // New alert triggered
-      activeEvents.value.push(data.data)
+      activeEvents.value.push(normalizeAlertEvent(data.data))
     } else if (data.action === 'resolved') {
       // Alert resolved
       activeEvents.value = activeEvents.value.filter(e => e.id !== data.data.eventId)

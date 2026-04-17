@@ -94,6 +94,36 @@ export interface Recommendations {
   analyzedAt: string
 }
 
+export interface FollowUpAnalysis {
+  answer: string
+  recommendActions?: Array<{
+    title: string
+    description: string
+  }>
+  analyzedAt: string
+}
+
+export type OverviewNavigateTarget = 'health' | 'trend' | 'recommendations' | 'ai-ops' | 'ai-chat'
+
+export interface OverviewRecommendedAction {
+  type: 'navigate'
+  target: OverviewNavigateTarget
+  label: string
+}
+
+export interface OverviewQuestionResult {
+  answer: string
+  riskPoints: string[]
+  nextSteps: string[]
+  recommendedActions?: OverviewRecommendedAction[]
+  analyzedAt: string
+}
+
+export interface OverviewQuestionClientHints {
+  nodeId?: string
+  timeRange?: string
+}
+
 // Get AI service status
 export const getAIStatus = () => {
   return aiRequest.get<any, { success: boolean; data: AIStatus }>('/ai/status')
@@ -115,4 +145,22 @@ export const analyzeTrend = (nodeId: string, timeRange: string = '24h') => {
 // Get optimization recommendations
 export const getRecommendations = () => {
   return aiRequest.post<any, { success: boolean; data: Recommendations }>('/ai/analyze/recommendations')
+}
+
+// Ask follow-up question
+export const analyzeFollowUp = (question: string, contextSummary: string, analysisType: string) => {
+  return aiRequest.post<any, { success: boolean; data: FollowUpAnalysis }>('/ai/analyze/follow-up', {
+    question,
+    contextSummary,
+    analysisType
+  })
+}
+
+// Ask system overview question on AIAnalysis homepage
+export const analyzeOverviewQuestion = (question: string, clientHints?: OverviewQuestionClientHints) => {
+  return aiRequest.post<any, { success: boolean; data: OverviewQuestionResult }>('/ai/analyze/overview-question', {
+    question,
+    contextType: 'system-overview',
+    clientHints
+  })
 }

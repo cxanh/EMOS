@@ -8,7 +8,7 @@ import yaml
 import requests
 import logging
 import socket
-from datetime import datetime
+from datetime import datetime, timezone
 from collectors.cpu import collect_cpu_usage
 from collectors.memory import collect_memory_usage
 from collectors.disk import collect_disk_usage
@@ -71,7 +71,9 @@ class SystemAgent:
                     return True
                 self.logger.error(f"Registration failed: {result.get('error')}")
             else:
-                self.logger.error(f"Registration failed with status code: {response.status_code}")
+                self.logger.error(
+                    f"Registration failed with status code: {response.status_code}, body: {response.text[:300]}"
+                )
         except Exception as e:
             self.logger.error(f"Error during registration: {e}")
 
@@ -116,7 +118,7 @@ class SystemAgent:
             'hostname': self.hostname,
             'display_name': self.display_name,
             'metrics': metrics,
-            'timestamp': datetime.utcnow().isoformat() + 'Z'
+            'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         }
 
         for attempt in range(self.retry):

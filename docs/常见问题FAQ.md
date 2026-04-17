@@ -399,7 +399,7 @@ npm run dev
 
 **问题描述**:
 ```
-Error: listen EADDRINUSE: address already in use :::3000
+Error: listen EADDRINUSE: address already in use :::50001
 ```
 
 **原因**:
@@ -410,7 +410,7 @@ Error: listen EADDRINUSE: address already in use :::3000
 **Windows**:
 ```cmd
 # 查找占用端口的进程
-netstat -ano | findstr :3000
+netstat -ano | findstr :50001
 
 # 结束进程（替换 PID）
 taskkill /PID <PID> /F
@@ -419,7 +419,7 @@ taskkill /PID <PID> /F
 **Linux/Mac**:
 ```bash
 # 查找占用端口的进程
-lsof -i :3000
+lsof -i :50001
 
 # 结束进程
 kill -9 <PID>
@@ -456,7 +456,7 @@ npm run dev
 2. **检查前端配置**
 编辑 `frontend/.env`:
 ```env
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:50001
 ```
 
 3. **检查 CORS 配置**
@@ -618,8 +618,8 @@ Type 'string' is not assignable to type 'number'
 如果以上方案无法解决问题：
 
 1. 查看 [测试指南.md](./测试指南.md) 故障排查部分
-2. 查看 [测试报告.md](./测试报告.md) 已知问题
-3. 查看 [问题修复清单.md](./问题修复清单.md)
+2. 查看 [测试报告.md](./archive/测试报告.md) 已知问题
+3. 查看 [问题修复清单.md](./archive/问题修复清单.md)
 4. 提交 Issue 描述问题
 
 ---

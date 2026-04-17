@@ -61,7 +61,7 @@
             <div class="alert-details">
               <span>节点: {{ event.nodeName }}</span>
               <span>指标: {{ getMetricLabel(event.metric) }}</span>
-              <span>当前值: {{ event.currentValue.toFixed(1) }}%</span>
+              <span>当前值: {{ formatPercent(event.currentValue) }}</span>
               <span>阈值: {{ event.threshold }}%</span>
             </div>
             <div class="alert-time">{{ formatTime(event.triggeredAt) }}</div>
@@ -370,8 +370,16 @@ const getChannelLabel = (channel: string) => {
   return labels[channel] || channel
 }
 
-const formatTime = (time: string) => {
+const formatPercent = (value: number | string | null | undefined) => {
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(numericValue) ? `${numericValue.toFixed(1)}%` : '-'
+}
+
+const formatTime = (time: string | null | undefined) => {
+  if (!time) return '-'
+
   const date = new Date(time)
+  if (Number.isNaN(date.getTime())) return '-'
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
   

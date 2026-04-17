@@ -24,6 +24,8 @@ const metricsRoutes = require('./routes/metrics');
 const alertRoutes = require('./routes/alert');
 const aiRoutes = require('./routes/ai');
 const { createAiV2Router } = require('./routes/aiV2');
+const { createAiChatRouter } = require('./routes/aiChat');
+const { createAiSettingsRouter } = require('./routes/aiSettings');
 const usersRoutes = require('./routes/users');
 const reportsRoutes = require('./routes/reports');
 
@@ -60,6 +62,12 @@ function createApp({ skipRequestLogging = false } = {}) {
   app.use('/api/alert', alertRoutes);
   app.use('/api/ai', aiRoutes);
   app.use('/api/ai/v2', createAiV2Router({
+    authenticateRequest: authenticateToken
+  }));
+  app.use('/api/ai/v2/chat', createAiChatRouter({
+    authenticateRequest: authenticateToken
+  }));
+  app.use('/api/ai/v2/settings', createAiSettingsRouter({
     authenticateRequest: authenticateToken
   }));
   app.use('/api/users', usersRoutes);

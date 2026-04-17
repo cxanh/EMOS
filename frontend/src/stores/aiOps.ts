@@ -111,6 +111,12 @@ export const useAiOpsStore = defineStore('aiOps', () => {
         return stopPolling()
       }
 
+      try {
+        await fetchTimeline(requestId)
+      } catch (err) {
+        console.error('[AI Ops Store] Error fetching timeline during polling:', err)
+      }
+
       const status = currentRequest.value?.status
       if (status && !TERMINAL_STATUSES.includes(status)) {
         pollingTimer = setTimeout(poll, 2000)
