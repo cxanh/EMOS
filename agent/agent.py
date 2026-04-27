@@ -8,7 +8,7 @@ import yaml
 import requests
 import logging
 import socket
-from datetime import datetime
+from datetime import datetime, timezone
 from collectors.cpu import collect_cpu_usage
 from collectors.memory import collect_memory_usage
 from collectors.disk import collect_disk_usage
@@ -27,6 +27,7 @@ class SystemAgent:
         self.server_url = self.config['server']['url']
         self.register_endpoint = self.config['server']['register_endpoint']
         self.metrics_endpoint = self.config['server']['metrics_endpoint']
+        self.agent_token = self.config['server'].get('agent_token') or ''
 
         self.interval = self.config['collection']['interval']
         self.retry = self.config['collection']['retry']
@@ -46,6 +47,11 @@ class SystemAgent:
         self.logger = logging.getLogger('EOMS-Agent')
         self.registered = False
 
+    def get_auth_headers(self):
+        if not self.agent_token:
+            return {}
+        return {'X-Agent-Token': self.agent_token}
+
     def register(self):
         url = f"{self.server_url}{self.register_endpoint}"
         data = {
@@ -56,7 +62,7 @@ class SystemAgent:
         }
 
         try:
-            response = requests.post(url, json=data, timeout=self.timeout)
+            response = requests.post(url, json=data, timeout=self.timeout, headers=self.get_auth_headers())
             if response.status_code == 200:
                 result = response.json()
                 if result.get('success'):
@@ -65,7 +71,9 @@ class SystemAgent:
                     return True
                 self.logger.error(f"Registration failed: {result.get('error')}")
             else:
-                self.logger.error(f"Registration failed with status code: {response.status_code}")
+                self.logger.error(
+                    f"Registration failed with status code: {response.status_code}, body: {response.text[:300]}"
+                )
         except Exception as e:
             self.logger.error(f"Error during registration: {e}")
 
@@ -110,12 +118,12 @@ class SystemAgent:
             'hostname': self.hostname,
             'display_name': self.display_name,
             'metrics': metrics,
-            'timestamp': datetime.utcnow().isoformat() + 'Z'
+            'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         }
 
         for attempt in range(self.retry):
             try:
-                response = requests.post(url, json=data, timeout=self.timeout)
+                response = requests.post(url, json=data, timeout=self.timeout, headers=self.get_auth_headers())
                 if response.status_code == 200:
                     result = response.json()
                     if result.get('success'):
@@ -143,6 +151,8 @@ class SystemAgent:
         self.logger.info(f"Display Name: {self.display_name}")
         self.logger.info(f"Server: {self.server_url}")
         self.logger.info(f"Collection interval: {self.interval}s")
+        if not self.agent_token:
+            self.logger.warning("Agent token is empty; requests may be rejected by server")
 
         if not self.register():
             self.logger.warning("Failed to register, will try again later")

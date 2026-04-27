@@ -62,45 +62,45 @@ export interface AlertHistoryQuery {
 
 // Alert Rules API
 export const createAlertRule = (data: CreateRuleRequest) => {
-  return request.post<{ success: boolean; data: AlertRule }>('/alert/rules', data)
+  return request.post<any, { success: boolean; data: AlertRule }>('/alert/rules', data)
 }
 
 export const getAlertRules = () => {
-  return request.get<{ success: boolean; data: { rules: AlertRule[]; count: number } }>('/alert/rules')
+  return request.get<any, { success: boolean; data: { rules: AlertRule[]; count: number } }>('/alert/rules')
 }
 
 export const getAlertRule = (ruleId: string) => {
-  return request.get<{ success: boolean; data: AlertRule }>(`/alert/rules/${ruleId}`)
+  return request.get<any, { success: boolean; data: AlertRule }>(`/alert/rules/${ruleId}`)
 }
 
 export const updateAlertRule = (ruleId: string, data: UpdateRuleRequest) => {
-  return request.put<{ success: boolean; data: AlertRule }>(`/alert/rules/${ruleId}`, data)
+  return request.put<any, { success: boolean; data: AlertRule }>(`/alert/rules/${ruleId}`, data)
 }
 
 export const deleteAlertRule = (ruleId: string) => {
-  return request.delete<{ success: boolean; message: string }>(`/alert/rules/${ruleId}`)
+  return request.delete<any, { success: boolean; message: string }>(`/alert/rules/${ruleId}`)
 }
 
 // Alert Events API
 export const getActiveAlerts = () => {
-  return request.get<{ success: boolean; data: { events: AlertEvent[]; count: number } }>('/alert/events/active')
+  return request.get<any, { success: boolean; data: { events: AlertEvent[]; count: number } }>('/alert/events/active')
 }
 
 export const getAlertHistory = (params: AlertHistoryQuery) => {
-  return request.get<{ success: boolean; data: { events: AlertEvent[]; count: number } }>('/alert/events/history', { params })
+  return request.get<any, { success: boolean; data: { events: AlertEvent[]; count: number } }>('/alert/events/history', { params })
 }
 
 export const resolveAlert = (eventId: string, comment?: string) => {
-  return request.post<{ success: boolean; message: string }>(`/alert/events/${eventId}/resolve`, { comment })
+  return request.post<any, { success: boolean; message: string }>(`/alert/events/${eventId}/resolve`, { comment })
 }
 
 export const ignoreAlert = (eventId: string) => {
-  return request.post<{ success: boolean; message: string }>(`/alert/events/${eventId}/ignore`)
+  return request.post<any, { success: boolean; message: string }>(`/alert/events/${eventId}/ignore`)
 }
 
 // Alert Checker Status API
 export const getAlertCheckerStatus = () => {
-  return request.get<{ success: boolean; data: { running: boolean; activeAlerts: number; checkInterval: number } }>('/alert/status')
+  return request.get<any, { success: boolean; data: { running: boolean; activeAlerts: number; checkInterval: number } }>('/alert/status')
 }
 
 // Notification Logs interfaces
@@ -147,16 +147,16 @@ export const getNotificationLogs = (params?: {
   startTime?: string
   endTime?: string
 }) => {
-  return request.get<{ success: boolean; data: { logs: NotificationLog[]; count: number } }>('/alert/notifications', { params })
+  return request.get<any, { success: boolean; data: { logs: NotificationLog[]; count: number } }>('/alert/notifications', { params })
 }
 
 export const getNotificationLog = (logId: string) => {
-  return request.get<{ success: boolean; data: NotificationLog }>(`/alert/notifications/${logId}`)
+  return request.get<any, { success: boolean; data: NotificationLog }>(`/alert/notifications/${logId}`)
 }
 
 export const getNotificationStats = (params?: {
   startTime?: string
   endTime?: string
 }) => {
-  return request.get<{ success: boolean; data: NotificationStats }>('/alert/notifications/stats/summary', { params })
+  return request.get<any, { success: boolean; data: NotificationStats }>('/alert/notifications/stats/summary', { params })
 }

@@ -10,18 +10,23 @@
           </span>
         </div>
       </div>
-      <button @click="refreshStatus" class="btn-secondary">
-        <span>🔄</span> 刷新状态
-      </button>
+      <div class="header-right">
+        <router-link :to="buildChatAnalysisRoute()" class="btn-secondary"
+          style="margin-right: 12px; text-decoration: none;">
+          <span>💬</span> 对话追问
+        </router-link>
+        <router-link to="/ai-ops-assistant" class="btn-primary" style="margin-right: 12px; text-decoration: none;">
+          <span>⚡</span> AI Ops 助手
+        </router-link>
+        <button @click="refreshStatus" class="btn-secondary">
+          <span>🔄</span> 刷新状态
+        </button>
+      </div>
     </div>
 
     <!-- Analysis Actions -->
     <div class="analysis-actions">
-      <button 
-        @click="performHealthCheck" 
-        class="action-card health"
-        :disabled="aiStore.analyzing"
-      >
+      <button @click="performHealthCheck" class="action-card health" :disabled="aiStore.analyzing">
         <div class="action-icon">💚</div>
         <div class="action-content">
           <h3>系统健康检查</h3>
@@ -29,11 +34,7 @@
         </div>
       </button>
 
-      <button 
-        @click="showTrendDialog = true" 
-        class="action-card trend"
-        :disabled="aiStore.analyzing"
-      >
+      <button @click="showTrendDialog = true" class="action-card trend" :disabled="aiStore.analyzing">
         <div class="action-icon">📈</div>
         <div class="action-content">
           <h3>性能趋势分析</h3>
@@ -41,11 +42,7 @@
         </div>
       </button>
 
-      <button 
-        @click="performRecommendations" 
-        class="action-card recommend"
-        :disabled="aiStore.analyzing"
-      >
+      <button @click="performRecommendations" class="action-card recommend" :disabled="aiStore.analyzing">
         <div class="action-icon">💡</div>
         <div class="action-content">
           <h3>优化建议</h3>
@@ -100,12 +97,8 @@
       <div v-if="aiStore.healthAnalysis.issues && aiStore.healthAnalysis.issues.length > 0" class="issues-section">
         <h3>发现的问题 ({{ aiStore.healthAnalysis.issues.length }})</h3>
         <div class="issues-grid">
-          <div 
-            v-for="(issue, index) in aiStore.healthAnalysis.issues" 
-            :key="index"
-            class="issue-card"
-            :class="issue.severity"
-          >
+          <div v-for="(issue, index) in aiStore.healthAnalysis.issues" :key="index" class="issue-card"
+            :class="issue.severity">
             <div class="issue-header">
               <span class="severity-icon">{{ getSeverityIcon(issue.severity) }}</span>
               <span class="severity-label">{{ getSeverityLabel(issue.severity) }}</span>
@@ -123,7 +116,8 @@
       </div>
 
       <!-- Recommendations -->
-      <div v-if="aiStore.healthAnalysis.recommendations && aiStore.healthAnalysis.recommendations.length > 0" class="recommendations-section">
+      <div v-if="aiStore.healthAnalysis.recommendations && aiStore.healthAnalysis.recommendations.length > 0"
+        class="recommendations-section">
         <h3>优化建议</h3>
         <ul class="recommendations-list">
           <li v-for="(rec, index) in aiStore.healthAnalysis.recommendations" :key="index">
@@ -178,14 +172,11 @@
       </div>
 
       <!-- Predictions -->
-      <div v-if="aiStore.trendAnalysis.predictions && aiStore.trendAnalysis.predictions.length > 0" class="predictions-section">
+      <div v-if="aiStore.trendAnalysis.predictions && aiStore.trendAnalysis.predictions.length > 0"
+        class="predictions-section">
         <h3>趋势预测</h3>
         <div class="predictions-grid">
-          <div 
-            v-for="(pred, index) in aiStore.trendAnalysis.predictions" 
-            :key="index"
-            class="prediction-card"
-          >
+          <div v-for="(pred, index) in aiStore.trendAnalysis.predictions" :key="index" class="prediction-card">
             <h4>{{ getMetricLabel(pred.metric) }}</h4>
             <div class="prediction-values">
               <div class="value-item">
@@ -225,7 +216,8 @@
       </div>
 
       <!-- Quick Wins -->
-      <div v-if="aiStore.recommendations.quickWins && aiStore.recommendations.quickWins.length > 0" class="quick-wins-section">
+      <div v-if="aiStore.recommendations.quickWins && aiStore.recommendations.quickWins.length > 0"
+        class="quick-wins-section">
         <h3>🚀 快速见效建议</h3>
         <div class="quick-wins-grid">
           <div v-for="(win, index) in aiStore.recommendations.quickWins" :key="index" class="quick-win-card">
@@ -236,7 +228,8 @@
       </div>
 
       <!-- Categories -->
-      <div v-if="aiStore.recommendations.categories && aiStore.recommendations.categories.length > 0" class="categories-section">
+      <div v-if="aiStore.recommendations.categories && aiStore.recommendations.categories.length > 0"
+        class="categories-section">
         <div v-for="(category, index) in aiStore.recommendations.categories" :key="index" class="category-block">
           <div class="category-header">
             <h3>{{ category.category }}</h3>
@@ -245,11 +238,7 @@
             </span>
           </div>
           <div class="recommendations-grid">
-            <div 
-              v-for="(rec, recIndex) in category.recommendations" 
-              :key="recIndex"
-              class="recommendation-card"
-            >
+            <div v-for="(rec, recIndex) in category.recommendations" :key="recIndex" class="recommendation-card">
               <h4>{{ rec.title }}</h4>
               <p class="rec-description">{{ rec.description }}</p>
               <div class="rec-meta">
@@ -266,7 +255,8 @@
       </div>
 
       <!-- Long Term -->
-      <div v-if="aiStore.recommendations.longTerm && aiStore.recommendations.longTerm.length > 0" class="long-term-section">
+      <div v-if="aiStore.recommendations.longTerm && aiStore.recommendations.longTerm.length > 0"
+        class="long-term-section">
         <h3>🎯 长期规划建议</h3>
         <ul class="long-term-list">
           <li v-for="(item, index) in aiStore.recommendations.longTerm" :key="index">
@@ -277,18 +267,127 @@
       </div>
     </div>
 
+    <!-- Lightweight Follow-up Section -->
+    <div v-if="(aiStore.healthAnalysis || aiStore.trendAnalysis || aiStore.recommendations) && !aiStore.analyzing"
+      class="result-section follow-up-section">
+      <div class="section-header">
+        <h2>💡 深度追问</h2>
+        <span class="timestamp">可针对当前显示的分析结果进行连续追问，新问题将覆盖旧答案</span>
+      </div>
+
+      <!-- Follow-up Input -->
+      <form @submit.prevent="submitFollowUp" class="follow-up-form">
+        <div class="input-wrapper">
+          <input type="text" v-model="followUpQuestion" placeholder="请输入您的问题，例如：这个节点的内存飙升是正常跑批还是存在泄漏风险？"
+            :disabled="aiStore.followUpLoading || aiStore.analyzing">
+          <button type="submit" class="btn-primary" :disabled="!followUpQuestion.trim() || aiStore.followUpLoading">
+            <span v-if="aiStore.followUpLoading" class="spinner-small"></span>
+            <span v-else>发送</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Follow-up Error -->
+      <div v-if="aiStore.followUpError" class="error-state compact">
+        <p>{{ aiStore.followUpError }}</p>
+      </div>
+
+      <!-- Follow-up Result -->
+      <div v-if="aiStore.followUpResult" class="follow-up-result">
+        <div class="answer-content">
+          <h4>分析回答</h4>
+          <p class="markdown-text">{{ aiStore.followUpResult.answer }}</p>
+        </div>
+
+        <div v-if="aiStore.followUpResult.recommendActions && aiStore.followUpResult.recommendActions.length > 0"
+          class="recommend-actions">
+          <h4>推荐操作</h4>
+          <div class="actions-grid">
+            <div v-for="(action, idx) in aiStore.followUpResult.recommendActions" :key="idx" class="action-card-mini">
+              <h5>{{ action.title }}</h5>
+              <p>{{ action.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Overview Question -->
+    <div class="overview-question-section">
+      <div class="section-header">
+        <h2>快速了解当前系统概况</h2>
+        <span class="timestamp">单轮提问 · 不会替代下方结构化分析</span>
+      </div>
+
+      <form class="overview-form" @submit.prevent="submitOverviewQuestion">
+        <div class="overview-input-row">
+          <textarea v-model.trim="overviewQuestion" rows="2" :disabled="aiStore.overviewQuestionLoading"
+            placeholder="例如：当前最主要的风险是什么？"></textarea>
+          <button type="submit" class="btn-primary"
+            :disabled="!overviewQuestion.trim() || aiStore.overviewQuestionLoading">
+            <span v-if="aiStore.overviewQuestionLoading" class="spinner-small"></span>
+            <span v-else>快速分析</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="overview-chips">
+        <button type="button" class="chip-btn" @click="useOverviewPreset('当前最主要的风险是什么？')">当前最主要的风险是什么？</button>
+        <button type="button" class="chip-btn" @click="useOverviewPreset('哪个节点最值得优先关注？')">哪个节点最值得优先关注？</button>
+        <button type="button" class="chip-btn" @click="useOverviewPreset('当前告警整体是否可控？')">当前告警整体是否可控？</button>
+        <button type="button" class="chip-btn" @click="useOverviewPreset('先做健康检查还是优化建议？')">先做健康检查还是优化建议？</button>
+      </div>
+
+      <div v-if="aiStore.overviewQuestionError" class="error-state compact">
+        <p>{{ aiStore.overviewQuestionError }}</p>
+        <button type="button" class="btn-secondary" @click="retryOverviewQuestion">重试</button>
+      </div>
+
+      <div v-if="aiStore.overviewQuestionResult" class="overview-result-card">
+        <div class="answer-content">
+          <h4>当前概况总结</h4>
+          <p class="markdown-text">{{ aiStore.overviewQuestionResult.answer }}</p>
+        </div>
+
+        <div v-if="aiStore.overviewQuestionResult.riskPoints?.length" class="overview-list-block">
+          <h4>风险提示</h4>
+          <ul>
+            <li v-for="(risk, index) in aiStore.overviewQuestionResult.riskPoints" :key="`risk-${index}`">{{ risk }}
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="aiStore.overviewQuestionResult.nextSteps?.length" class="overview-list-block">
+          <h4>下一步建议</h4>
+          <ul>
+            <li v-for="(step, index) in aiStore.overviewQuestionResult.nextSteps" :key="`step-${index}`">{{ step }}</li>
+          </ul>
+        </div>
+
+        <div v-if="aiStore.overviewQuestionResult.recommendedActions?.length" class="recommend-actions">
+          <h4>推荐入口</h4>
+          <div class="actions-grid">
+            <button v-for="(action, idx) in aiStore.overviewQuestionResult.recommendedActions" :key="`oa-${idx}`"
+              type="button" class="action-card-mini action-nav" @click="navigateRecommendedAction(action.target)">
+              <h5>{{ action.label }}</h5>
+              <p>导航目标：{{ action.target }}</p>
+            </button>
+          </div>
+        </div>
+
+        <div class="overview-deep-link">
+          <router-link class="btn-secondary" :to="buildChatAnalysisRoute()">去 AIChatAnalysis 深入分析</router-link>
+        </div>
+      </div>
+    </div>
+
     <!-- Analysis History -->
     <div v-if="aiStore.history.length > 0" class="history-section">
       <div class="section-header">
         <h2>分析历史</h2>
       </div>
       <div class="history-list">
-        <div 
-          v-for="(item, index) in aiStore.history" 
-          :key="index"
-          class="history-item"
-          @click="loadHistoryItem(item)"
-        >
+        <div v-for="(item, index) in aiStore.history" :key="index" class="history-item" @click="loadHistoryItem(item)">
           <div class="history-icon">{{ getHistoryIcon(item.type) }}</div>
           <div class="history-content">
             <div class="history-type">{{ getHistoryTypeLabel(item.type) }}</div>
@@ -338,17 +437,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAIStore } from '@/stores/ai'
 import { useNodesStore } from '@/stores/nodes'
 
 const aiStore = useAIStore()
 const nodesStore = useNodesStore()
+const router = useRouter()
+
+type OverviewNavigateTarget = 'health' | 'trend' | 'recommendations' | 'ai-ops' | 'ai-chat'
 
 const showTrendDialog = ref(false)
 const trendForm = ref({
   nodeId: '',
   timeRange: '24h'
 })
+const overviewQuestion = ref('')
+const lastOverviewQuestion = ref('')
 
 onMounted(async () => {
   await Promise.all([
@@ -386,6 +491,87 @@ const performRecommendations = async () => {
   }
 }
 
+const useOverviewPreset = (question: string) => {
+  overviewQuestion.value = question
+}
+
+const submitOverviewQuestion = async () => {
+  if (!overviewQuestion.value.trim() || aiStore.overviewQuestionLoading) return
+
+  const question = overviewQuestion.value.trim()
+  const clientHints = {
+    nodeId: nodesStore.currentNodeId || undefined,
+    timeRange: trendForm.value.timeRange || undefined
+  }
+
+  try {
+    await aiStore.askOverviewQuestion(question, clientHints)
+    lastOverviewQuestion.value = question
+  } catch (error) {
+    console.error('Overview question failed:', error)
+  }
+}
+
+const retryOverviewQuestion = async () => {
+  const question = overviewQuestion.value.trim() || lastOverviewQuestion.value
+  if (!question || aiStore.overviewQuestionLoading) return
+
+  overviewQuestion.value = question
+  await submitOverviewQuestion()
+}
+
+const scrollToAnalysisActions = () => {
+  const actions = document.querySelector('.analysis-actions')
+  if (actions) {
+    actions.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+const navigateRecommendedAction = (target: OverviewNavigateTarget) => {
+  if (target === 'ai-ops') {
+    router.push('/ai-ops-assistant')
+    return
+  }
+
+  if (target === 'ai-chat') {
+    router.push(buildChatAnalysisRoute())
+    return
+  }
+
+  scrollToAnalysisActions()
+}
+
+const followUpQuestion = ref('')
+
+const submitFollowUp = async () => {
+  if (!followUpQuestion.value.trim() || aiStore.followUpLoading) return
+
+  const type = aiStore.activeAnalysisType
+  if (!type) return
+
+  let contextSummary = ''
+
+  // Provide only essential summary string instead of raw timeseries
+  if (type === 'health' && aiStore.healthAnalysis) {
+    contextSummary = `评分: ${aiStore.healthAnalysis.healthScore}, 状态: ${aiStore.healthAnalysis.status}\n总述: ${aiStore.healthAnalysis.summary}\n存在问题: ${aiStore.healthAnalysis.issues?.map(i => `${i.node}(${i.metric}):${i.description}`).join('; ')}`
+  } else if (type === 'trend' && aiStore.trendAnalysis) {
+    contextSummary = `趋势: ${aiStore.trendAnalysis.trend}, 模式: ${aiStore.trendAnalysis.pattern}\n总述: ${aiStore.trendAnalysis.summary}\n预测与洞察: ${aiStore.trendAnalysis.insights?.join('; ')}`
+  } else if (type === 'recommendations' && aiStore.recommendations) {
+    contextSummary = `快速优化: ${aiStore.recommendations.quickWins?.join('; ')}\n主要建议分类: ${aiStore.recommendations.categories?.map(c => c.category).join(', ')}`
+  } else {
+    contextSummary = '暂无明确上下文'
+  }
+
+  const question = followUpQuestion.value
+
+  try {
+    await aiStore.askFollowUp(question, contextSummary, type)
+    followUpQuestion.value = ''
+  } catch (error) {
+    console.error('Follow-up failed:', error)
+  }
+}
+
 const closeTrendDialog = () => {
   showTrendDialog.value = false
   trendForm.value = {
@@ -394,13 +580,26 @@ const closeTrendDialog = () => {
   }
 }
 
+const buildChatAnalysisRoute = () => {
+  return {
+    name: 'AIChatAnalysis',
+    query: {
+      nodeId: trendForm.value.nodeId || nodesStore.currentNodeId || undefined,
+      timeRange: trendForm.value.timeRange || '24h'
+    }
+  }
+}
+
 const loadHistoryItem = (item: any) => {
   if (item.type === 'health') {
     aiStore.healthAnalysis = item.result
+    aiStore.activeAnalysisType = 'health'
   } else if (item.type === 'trend') {
     aiStore.trendAnalysis = item.result
+    aiStore.activeAnalysisType = 'trend'
   } else if (item.type === 'recommendations') {
     aiStore.recommendations = item.result
+    aiStore.activeAnalysisType = 'recommendations'
   }
 }
 
@@ -409,7 +608,7 @@ const formatTime = (time: string | Date) => {
   const date = new Date(time)
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
-  
+
   if (diff < 60) return `${diff}秒前`
   if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
   if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
@@ -574,8 +773,15 @@ const getHistoryTypeLabel = (type: string) => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Analysis Actions */
@@ -674,8 +880,13 @@ const getHistoryTypeLabel = (type: string) => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .analyzing-state p {
@@ -731,6 +942,103 @@ const getHistoryTypeLabel = (type: string) => {
 .timestamp {
   font-size: 13px;
   color: #999;
+}
+
+/* Homepage Overview Question */
+.overview-question-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.overview-form {
+  margin-bottom: 12px;
+}
+
+.overview-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.overview-input-row textarea {
+  flex: 1;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 56px;
+}
+
+.overview-input-row textarea:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.overview-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-btn {
+  border: 1px solid #d0d7de;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  color: #334155;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chip-btn:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.overview-result-card {
+  margin-top: 16px;
+  padding: 16px;
+  background: #fafcff;
+  border: 1px solid #e3f2fd;
+  border-radius: 10px;
+}
+
+.overview-list-block {
+  margin-top: 14px;
+}
+
+.overview-list-block h4 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: #1a1a1a;
+}
+
+.overview-list-block ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+}
+
+.overview-list-block li {
+  margin-bottom: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.action-nav {
+  cursor: pointer;
+  text-align: left;
+}
+
+.overview-deep-link {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #d1d5db;
 }
 
 /* Health Overview */
@@ -800,7 +1108,8 @@ const getHistoryTypeLabel = (type: string) => {
   gap: 8px;
 }
 
-.status-badge, .urgency-badge {
+.status-badge,
+.urgency-badge {
   padding: 6px 16px;
   border-radius: 20px;
   font-size: 13px;
@@ -838,7 +1147,8 @@ const getHistoryTypeLabel = (type: string) => {
   color: #e65100;
 }
 
-.urgency-badge.high, .urgency-badge.critical {
+.urgency-badge.high,
+.urgency-badge.critical {
   background: #ffebee;
   color: #c62828;
 }
@@ -887,7 +1197,8 @@ const getHistoryTypeLabel = (type: string) => {
   border-left: 4px solid;
 }
 
-.issue-card.critical, .issue-card.error {
+.issue-card.critical,
+.issue-card.error {
   background: #ffebee;
   border-color: #f44336;
 }
@@ -1476,7 +1787,8 @@ const getHistoryTypeLabel = (type: string) => {
 }
 
 /* Buttons */
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   padding: 8px 16px;
   border: none;
   border-radius: 6px;
@@ -1504,8 +1816,113 @@ const getHistoryTypeLabel = (type: string) => {
   background: #e0e0e0;
 }
 
+/* Follow-up Section */
+.follow-up-section {
+  background: #fafafa;
+  border: 1px dashed #cfd8dc;
+}
+
+.follow-up-form .input-wrapper {
+  display: flex;
+  gap: 12px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.follow-up-form input {
+  flex: 1;
+  border: none;
+  font-size: 14px;
+  padding: 8px 12px;
+  outline: none;
+  background: transparent;
+}
+
+.follow-up-form input:disabled {
+  opacity: 0.6;
+}
+
+.error-state.compact {
+  padding: 12px;
+  margin-top: 16px;
+  margin-bottom: 0;
+  border-radius: 6px;
+}
+
+.follow-up-result {
+  margin-top: 24px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #1976d2;
+}
+
+.answer-content h4,
+.recommend-actions h4 {
+  font-size: 16px;
+  color: #1a1a1a;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.answer-content .markdown-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.recommend-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.action-card-mini {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.action-card-mini h5 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  color: #1976d2;
+}
+
+.action-card-mini p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.spinner-small {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .overview-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .health-overview {
     grid-template-columns: 1fr;
   }

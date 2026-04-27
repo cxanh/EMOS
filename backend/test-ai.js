@@ -94,7 +94,7 @@ async function test() {
   console.log('提示:');
   console.log('  - 如果测试成功，说明AI服务配置正确');
   console.log('  - 可以在前端页面使用AI分析功能');
-  console.log('  - 查看 AI_SYSTEM_IMPLEMENTATION.md 了解更多');
+  console.log('  - 查看 docs/archive/root/AI_SYSTEM_IMPLEMENTATION.md 了解更多');
 }
 
 test().catch(error => {

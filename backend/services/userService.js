@@ -13,7 +13,15 @@ class UserService {
     };
   }
 
-  // 初始化默认管理员账户
+  // Redis compatibility helper for old servers without HSET map support
+  async setHashFields(key, data) {
+    for (const [field, value] of Object.entries(data)) {
+      const serialized = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      await redisClient.client.hSet(key, field, serialized);
+    }
+  }
+
+  // 闁告帗绻傞～鎰板礌閺嶎厾甯涢悹浣靛€楅鎼佹偠閸℃鍠呴悹鎰堕檮閸?
   async initializeDefaultAdmin() {
     try {
       const adminExists = await this.getUserByUsername('admin');
@@ -33,18 +41,18 @@ class UserService {
     }
   }
 
-  // 创建用户
+  // 闁告帗绋戠紓鎾绘偨閵婏箑鐓?
   async createUser(userData) {
     try {
       const { username, password, role, email, fullName } = userData;
 
-      // 检查用户名是否已存在
+      // 婵☆偀鍋撻柡灞诲劤閺併倝骞嬪畡鐗堝€抽柡鍕靛灠閹礁顔忛幓鎺旀憼闁?
       const existingUser = await this.getUserByUsername(username);
       if (existingUser) {
         throw new Error('Username already exists');
       }
 
-      // 检查邮箱是否已存在
+      // 婵☆偀鍋撻柡灞诲劦閸嬫牜绮绘潏銊π﹂柛姘剧畱閸戯紕鈧稒锚濠€?
       if (email) {
         const existingEmail = await this.getUserByEmail(email);
         if (existingEmail) {
@@ -56,7 +64,7 @@ class UserService {
       const user = {
         id: userId,
         username,
-        password, // 应该已经加密
+        password, // 閹煎瓨妫侀姘啅閼碱剛鐥呴柛鏃傚Т閻?
         role: role || this.ROLES.VIEWER,
         email: email || '',
         fullName: fullName || username,
@@ -66,29 +74,23 @@ class UserService {
         status: 'active' // active, disabled
       };
 
-      // 保存用户信息
-      await redisClient.client.hSet(
-        `${this.USER_PREFIX}${userId}`,
-        Object.entries(user).reduce((acc, [key, value]) => {
-          acc[key] = typeof value === 'object' ? JSON.stringify(value) : String(value);
-          return acc;
-        }, {})
-      );
+      // 濞ｅ洦绻傞悺銊╂偨閵婏箑鐓曞ǎ鍥ｅ墲娴?
+      await this.setHashFields(`${this.USER_PREFIX}${userId}`, user);
 
-      // 添加到用户列表
+      // 婵烇綀顕ф慨鐐哄礆閹殿喗鏆忛柟鏉戝槻閸亞鎮?
       await redisClient.client.sAdd(this.USERS_KEY, userId);
 
-      // 创建用户名到ID的映射
+      // 闁告帗绋戠紓鎾绘偨閵婏箑鐓曢柛姘Т閸╁瓥D闁汇劌瀚Σ褏浜?
       await redisClient.client.set(`username:${username}`, userId);
 
-      // 创建邮箱到ID的映射
+      // 闁告帗绋戠紓鎾绘焽椤旂虎鍞搁柛鎺旀D闁汇劌瀚Σ褏浜?
       if (email) {
         await redisClient.client.set(`email:${email}`, userId);
       }
 
       logger.info(`User created: ${username} (${userId})`);
 
-      // 返回用户信息（不包含密码）
+      // 閺夆晜鏌ㄥú鏍偨閵婏箑鐓曞ǎ鍥ｅ墲娴煎懘鏁嶉崼婊呯憹闁告牕鎳庨幆鍫⑩偓闈涙閻栨粓鏁?
       const { password: _, ...userWithoutPassword } = user;
       return userWithoutPassword;
     } catch (error) {
@@ -97,7 +99,7 @@ class UserService {
     }
   }
 
-  // 获取用户（通过ID）
+  // 闁兼儳鍢茶ぐ鍥偨閵婏箑鐓曢柨娑樼墦閳ь剚淇虹换鍍咲闁?
   async getUserById(userId) {
     try {
       const userData = await redisClient.client.hGetAll(`${this.USER_PREFIX}${userId}`);
@@ -113,7 +115,7 @@ class UserService {
     }
   }
 
-  // 获取用户（通过用户名）
+  // 闁兼儳鍢茶ぐ鍥偨閵婏箑鐓曢柨娑樼墦閳ь剚淇虹换鍐偨閵婏箑鐓曢柛姘▌缁?
   async getUserByUsername(username) {
     try {
       const userId = await redisClient.client.get(`username:${username}`);
@@ -127,7 +129,7 @@ class UserService {
     }
   }
 
-  // 获取用户（通过邮箱）
+  // 闁兼儳鍢茶ぐ鍥偨閵婏箑鐓曢柨娑樼墦閳ь剚淇虹换鍐焽椤旂虎鍞搁柨?
   async getUserByEmail(email) {
     try {
       const userId = await redisClient.client.get(`email:${email}`);
@@ -141,7 +143,7 @@ class UserService {
     }
   }
 
-  // 获取所有用户
+  // 闁兼儳鍢茶ぐ鍥箥閳ь剟寮垫径灞炬殢闁?
   async getAllUsers() {
     try {
       const userIds = await redisClient.client.sMembers(this.USERS_KEY);
@@ -150,7 +152,7 @@ class UserService {
       for (const userId of userIds) {
         const user = await this.getUserById(userId);
         if (user) {
-          // 不返回密码
+          // 濞戞挸绉风换鎴﹀炊閻愯尙妲曢柣?
           const { password, ...userWithoutPassword } = user;
           users.push(userWithoutPassword);
         }
@@ -163,7 +165,7 @@ class UserService {
     }
   }
 
-  // 更新用户
+  // 闁哄洤鐡ㄩ弻濠囨偨閵婏箑鐓?
   async updateUser(userId, updates) {
     try {
       const user = await this.getUserById(userId);
@@ -171,24 +173,24 @@ class UserService {
         throw new Error('User not found');
       }
 
-      // 如果更新用户名，检查是否已存在
+      // 濠碘€冲€归悘澶愬即鐎涙ɑ鐓€闁活潿鍔嶉崺娑㈠触瀹ュ繒绀夋俊顐熷亾闁哄被鍎插Σ鎼佸触閿曗偓閸戯紕鈧稒锚濠€?
       if (updates.username && updates.username !== user.username) {
         const existingUser = await this.getUserByUsername(updates.username);
         if (existingUser) {
           throw new Error('Username already exists');
         }
-        // 更新用户名映射
+        // 闁哄洤鐡ㄩ弻濠囨偨閵婏箑鐓曢柛姘У濡惭呬焊?
         await redisClient.client.del(`username:${user.username}`);
         await redisClient.client.set(`username:${updates.username}`, userId);
       }
 
-      // 如果更新邮箱，检查是否已存在
+      // 濠碘€冲€归悘澶愬即鐎涙ɑ鐓€闂侇収鍠氶鍫ユ晬鐏炵虎姊鹃柡灞诲劜濡叉悂宕ラ敃鈧崙锛勨偓娑櫭﹢?
       if (updates.email && updates.email !== user.email) {
         const existingEmail = await this.getUserByEmail(updates.email);
         if (existingEmail) {
           throw new Error('Email already exists');
         }
-        // 更新邮箱映射
+        // 闁哄洤鐡ㄩ弻濠囨焽椤旂虎鍞搁柡鍕Т閻?
         if (user.email) {
           await redisClient.client.del(`email:${user.email}`);
         }
@@ -201,14 +203,8 @@ class UserService {
         updatedAt: new Date().toISOString()
       };
 
-      // 保存更新后的用户信息
-      await redisClient.client.hSet(
-        `${this.USER_PREFIX}${userId}`,
-        Object.entries(updatedUser).reduce((acc, [key, value]) => {
-          acc[key] = typeof value === 'object' ? JSON.stringify(value) : String(value);
-          return acc;
-        }, {})
-      );
+      // 濞ｅ洦绻傞悺銊╁即鐎涙ɑ鐓€闁告艾娴峰▓鎴︽偨閵婏箑鐓曞ǎ鍥ｅ墲娴?
+      await this.setHashFields(`${this.USER_PREFIX}${userId}`, updatedUser);
 
       logger.info(`User updated: ${updatedUser.username} (${userId})`);
 
@@ -220,7 +216,7 @@ class UserService {
     }
   }
 
-  // 删除用户
+  // 闁告帞濞€濞呭酣鎮介妸锕€鐓?
   async deleteUser(userId) {
     try {
       const user = await this.getUserById(userId);
@@ -228,7 +224,7 @@ class UserService {
         throw new Error('User not found');
       }
 
-      // 不允许删除最后一个管理员
+      // 濞戞挸绉撮崢鎴犳媼缁嬪灝鐏╅梻鍕╁€栧〒鍫曞触鎼存繄顏卞☉鎿冧簽椤撴悂鎮堕崱妤佸枀
       if (user.role === this.ROLES.ADMIN) {
         const allUsers = await this.getAllUsers();
         const adminCount = allUsers.filter(u => u.role === this.ROLES.ADMIN).length;
@@ -237,16 +233,16 @@ class UserService {
         }
       }
 
-      // 删除用户数据
+      // 闁告帞濞€濞呭酣鎮介妸锕€鐓曢柡浣哄瀹?
       await redisClient.client.del(`${this.USER_PREFIX}${userId}`);
       
-      // 从用户列表中移除
+      // 濞寸姴娴烽弫銈夊箣瀹勬澘鐏欓悶娑栧妺閼垫垹绮旀繝姘彑
       await redisClient.client.sRem(this.USERS_KEY, userId);
       
-      // 删除用户名映射
+      // 闁告帞濞€濞呭酣鎮介妸锕€鐓曢柛姘У濡惭呬焊?
       await redisClient.client.del(`username:${user.username}`);
       
-      // 删除邮箱映射
+      // 闁告帞濞€濞呭酣鏌囬缁㈠敻闁哄嫮濮撮惃?
       if (user.email) {
         await redisClient.client.del(`email:${user.email}`);
       }
@@ -260,7 +256,7 @@ class UserService {
     }
   }
 
-  // 更新密码
+  // 闁哄洤鐡ㄩ弻濠勨偓闈涙閻?
   async updatePassword(userId, newPassword) {
     try {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -275,7 +271,7 @@ class UserService {
     }
   }
 
-  // 验证密码
+  // 濡ょ姴鐭侀惁澶屸偓闈涙閻?
   async verifyPassword(userId, password) {
     try {
       const user = await this.getUserById(userId);
@@ -283,7 +279,7 @@ class UserService {
         return false;
       }
 
-      // 开发环境简单验证
+      // 鐎殿喒鍋撻柛娆愬灩楠炲棙鏅堕崘顏嗘殕闁告娲熼悰娆戞嫚?
       const allowDevAdminBypass =
         process.env.NODE_ENV === 'development' &&
         process.env.ALLOW_DEFAULT_ADMIN_PASSWORD === 'true';
@@ -299,7 +295,7 @@ class UserService {
     }
   }
 
-  // 更新最后登录时间
+  // 闁哄洤鐡ㄩ弻濠囧嫉閳ь剟宕ユ惔锝嗩仮鐟滅増娲樺鍌炴⒒?
   async updateLastLogin(userId) {
     try {
       await redisClient.client.hSet(
@@ -312,7 +308,7 @@ class UserService {
     }
   }
 
-  // 禁用/启用用户
+  // 缂佸倷鑳堕弫?闁告凹鍨抽弫銈夋偨閵婏箑鐓?
   async setUserStatus(userId, status) {
     try {
       await redisClient.client.hSet(`${this.USER_PREFIX}${userId}`, 'status', status);
@@ -326,7 +322,7 @@ class UserService {
     }
   }
 
-  // 解析用户数据
+  // 閻熸瑱绲鹃悗浠嬫偨閵婏箑鐓曢柡浣哄瀹?
   parseUserData(userData) {
     return {
       id: userData.id,
@@ -342,7 +338,7 @@ class UserService {
     };
   }
 
-  // 获取角色列表
+  // 闁兼儳鍢茶ぐ鍥╂喆閹烘洖顥忛柛鎺擃殙閵?
   getRoles() {
     return Object.values(this.ROLES);
   }

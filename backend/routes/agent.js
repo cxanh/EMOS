@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const dataStore = require('../services/dataStore');
 const logger = require('../utils/logger');
+const { authenticateAgentToken } = require('../middleware/agentAuth');
 
-router.post('/register', async (req, res, next) => {
+router.post('/register', authenticateAgentToken, async (req, res, next) => {
   try {
     const { node_id, hostname, ip, display_name } = req.body;
 
@@ -41,7 +42,7 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-router.post('/metrics', async (req, res, next) => {
+router.post('/metrics', authenticateAgentToken, async (req, res, next) => {
   try {
     const { node_id, hostname, display_name, metrics, timestamp } = req.body;
 

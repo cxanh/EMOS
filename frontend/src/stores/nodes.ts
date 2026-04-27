@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getAgentList, type Agent } from '@/api/agent';
-import { getNodes } from '@/api/metrics';
 
 export const useNodesStore = defineStore('nodes', () => {
   // 状态
@@ -21,8 +20,9 @@ export const useNodesStore = defineStore('nodes', () => {
         nodes.value = response.data.agents;
         
         // 如果没有选中节点且有节点列表，选中第一个
-        if (!currentNodeId.value && nodes.value.length > 0) {
-          currentNodeId.value = nodes.value[0].node_id;
+        const firstNode = nodes.value[0];
+        if (!currentNodeId.value && firstNode) {
+          currentNodeId.value = firstNode.node_id;
         }
       }
     } catch (err: any) {

@@ -1,23 +1,35 @@
 const { InfluxDB, Point } = require('@influxdata/influxdb-client');
 require('dotenv').config();
 
+function shouldEnableInflux(token) {
+  if (!token) return false;
+
+  const normalized = String(token).trim().toLowerCase();
+  if (!normalized) return false;
+  if (normalized === 'your_influx_token_here') return false;
+
+  return true;
+}
+
 class InfluxDBClient {
   constructor() {
     this.client = null;
     this.writeApi = null;
     this.queryApi = null;
     this.isConnected = false;
+    this.hasLoggedDisable = false;
   }
 
-  connect() {
+  async connect() {
     try {
       const url = process.env.INFLUX_URL || 'http://localhost:8086';
       const token = process.env.INFLUX_TOKEN;
       const org = process.env.INFLUX_ORG || 'eoms';
       const bucket = process.env.INFLUX_BUCKET || 'system_monitoring';
 
-      if (!token) {
+      if (!shouldEnableInflux(token)) {
         console.warn('InfluxDB token not configured. InfluxDB features will be disabled.');
+        this.isConnected = false;
         return;
       }
 
@@ -29,6 +41,7 @@ class InfluxDBClient {
       this.writeApi.useDefaultTags({ app: 'eoms' });
 
       this.isConnected = true;
+      this.hasLoggedDisable = false;
       console.log('InfluxDB Client Connected');
     } catch (error) {
       console.error('Failed to connect to InfluxDB:', error);
@@ -62,6 +75,11 @@ class InfluxDBClient {
       }
     } catch (error) {
       console.error('Error writing to InfluxDB:', error);
+      this.isConnected = false;
+      if (!this.hasLoggedDisable) {
+        console.warn('InfluxDB write failed. InfluxDB features are now disabled until service restart.');
+        this.hasLoggedDisable = true;
+      }
     }
   }
 
@@ -164,6 +182,11 @@ class InfluxDBClient {
       await this.writeApi.flush();
     } catch (error) {
       console.error('Error writing alert event to InfluxDB:', error);
+      this.isConnected = false;
+      if (!this.hasLoggedDisable) {
+        console.warn('InfluxDB write failed. InfluxDB features are now disabled until service restart.');
+        this.hasLoggedDisable = true;
+      }
     }
   }
 
@@ -228,4 +251,6 @@ class InfluxDBClient {
   }
 }
 
-module.exports = new InfluxDBClient();
+const influxClient = new InfluxDBClient();
+module.exports = influxClient;
+module.exports.shouldEnableInflux = shouldEnableInflux;

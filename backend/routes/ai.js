@@ -6,11 +6,7 @@ const logger = require('../utils/logger');
 // Get AI service status
 router.get('/status', async (req, res, next) => {
   try {
-    const status = {
-      enabled: aiService.isEnabled(),
-      provider: process.env.LLM_PROVIDER || 'openai',
-      model: process.env.OPENAI_MODEL || process.env.OLLAMA_MODEL || 'gpt-4'
-    };
+    const status = aiService.getStatus();
 
     res.json({
       success: true,
@@ -113,6 +109,90 @@ router.post('/analyze/recommendations', async (req, res, next) => {
     }
   } catch (error) {
     logger.error('Error getting recommendations:', error);
+    next(error);
+  }
+});
+
+// Follow-up question on analysis
+router.post('/analyze/follow-up', async (req, res, next) => {
+  try {
+    if (!aiService.isEnabled()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: 'AI_SERVICE_DISABLED',
+          message: 'AI service is not enabled'
+        }
+      });
+    }
+
+    const { question, contextSummary, analysisType } = req.body;
+
+    if (!question || !contextSummary || !analysisType) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_DATA',
+          message: 'question, contextSummary and analysisType are required'
+        }
+      });
+    }
+
+    logger.info(`Starting follow-up analysis for type ${analysisType}`);
+    const result = await aiService.analyzeFollowUp(question, contextSummary, analysisType);
+
+    if (result.success) {
+      logger.info('Follow-up analysis completed');
+      res.json(result);
+    } else {
+      throw new Error(result.error || 'Failed to analyze follow-up');
+    }
+  } catch (error) {
+    logger.error('Error in follow-up analysis:', error);
+    next(error);
+  }
+});
+
+// Homepage quick overview question
+router.post('/analyze/overview-question', async (req, res, next) => {
+  try {
+    if (!aiService.isEnabled()) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: 'AI_SERVICE_DISABLED',
+          message: 'AI service is not enabled'
+        }
+      });
+    }
+
+    const { question, contextType, clientHints } = req.body;
+
+    if (!question || contextType !== 'system-overview') {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_DATA',
+          message: 'question is required and contextType must be system-overview'
+        }
+      });
+    }
+
+    logger.info('Starting overview question analysis');
+    const result = await aiService.analyzeOverviewQuestion({
+      question,
+      contextType,
+      clientHints
+    });
+
+    if (result.success) {
+      logger.info('Overview question analysis completed');
+      res.json(result);
+    } else {
+      throw new Error(result.error || 'Failed to analyze overview question');
+    }
+  } catch (error) {
+    logger.error('Error in overview question analysis:', error);
     next(error);
   }
 });

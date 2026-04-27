@@ -192,22 +192,21 @@ class AlertService {
       };
 
       // Save to Redis
-      await redisClient.client.hSet(
-        `alert:event:${event.id}`,
-        'id', event.id,
-        'ruleId', event.ruleId,
-        'ruleName', event.ruleName,
-        'nodeId', event.nodeId,
-        'nodeName', event.nodeName,
-        'metric', event.metric,
-        'currentValue', String(event.currentValue),
-        'threshold', String(event.threshold),
-        'status', event.status,
-        'triggeredAt', event.triggeredAt,
-        'resolvedAt', event.resolvedAt || '',
-        'notified', String(event.notified),
-        'message', event.message
-      );
+      // Save to Redis (compatible with old Redis versions)
+      const eventKey = `alert:event:${event.id}`;
+      await redisClient.client.hSet(eventKey, 'id', event.id);
+      await redisClient.client.hSet(eventKey, 'ruleId', event.ruleId);
+      await redisClient.client.hSet(eventKey, 'ruleName', event.ruleName);
+      await redisClient.client.hSet(eventKey, 'nodeId', event.nodeId);
+      await redisClient.client.hSet(eventKey, 'nodeName', event.nodeName);
+      await redisClient.client.hSet(eventKey, 'metric', event.metric);
+      await redisClient.client.hSet(eventKey, 'currentValue', String(event.currentValue));
+      await redisClient.client.hSet(eventKey, 'threshold', String(event.threshold));
+      await redisClient.client.hSet(eventKey, 'status', event.status);
+      await redisClient.client.hSet(eventKey, 'triggeredAt', event.triggeredAt);
+      await redisClient.client.hSet(eventKey, 'resolvedAt', event.resolvedAt || '');
+      await redisClient.client.hSet(eventKey, 'notified', String(event.notified));
+      await redisClient.client.hSet(eventKey, 'message', event.message);
 
       // Add to active events set
       await redisClient.client.sAdd('alert:events:active', event.id);
@@ -261,11 +260,9 @@ class AlertService {
       }
 
       // Update status
-      await redisClient.client.hSet(
-        `alert:event:${eventId}`,
-        'status', 'resolved',
-        'resolvedAt', new Date().toISOString()
-      );
+      // Update status (compatible with old Redis versions)
+      await redisClient.client.hSet(`alert:event:${eventId}`, 'status', 'resolved');
+      await redisClient.client.hSet(`alert:event:${eventId}`, 'resolvedAt', new Date().toISOString());
 
       if (comment) {
         await redisClient.client.hSet(`alert:event:${eventId}`, 'comment', comment);
@@ -281,6 +278,113 @@ class AlertService {
       return { success: true };
     } catch (error) {
       logger.error('Error resolving alert event:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Get alert event by ID
+  async getEventById(eventId) {
+    try {
+      const eventData = await redisClient.client.hGetAll(`alert:event:${eventId}`);
+      if (!eventData || Object.keys(eventData).length === 0) {
+        return null;
+      }
+
+      return {
+        ...eventData,
+        currentValue: eventData.currentValue ? parseFloat(eventData.currentValue) : null,
+        threshold: eventData.threshold ? parseFloat(eventData.threshold) : null,
+        notified: eventData.notified === 'true'
+      };
+    } catch (error) {
+      logger.error('Error getting alert event by id:', error);
+      return null;
+    }
+  }
+
+  // Acknowledge alert event
+  async acknowledgeAlert(params) {
+    try {
+      const event = await this.getEventById(params.eventId);
+      if (!event) {
+        return { success: false, error: 'Event not found' };
+      }
+
+      const acknowledgedAt = new Date().toISOString();
+
+      await redisClient.client.hSet(`alert:event:${params.eventId}`, 'status', 'acknowledged');
+      await redisClient.client.hSet(
+        `alert:event:${params.eventId}`,
+        'acknowledgedAt',
+        acknowledgedAt
+      );
+
+      if (params.comment) {
+        await redisClient.client.hSet(
+          `alert:event:${params.eventId}`,
+          'comment',
+          params.comment
+        );
+      }
+
+      await redisClient.client.sRem('alert:events:active', params.eventId);
+      await redisClient.client.sAdd('alert:events:acknowledged', params.eventId);
+
+      logger.info(`Alert event acknowledged: ${params.eventId}`);
+      return {
+        success: true,
+        data: {
+          ok: true,
+          eventId: params.eventId,
+          acknowledgedAt
+        }
+      };
+    } catch (error) {
+      logger.error('Error acknowledging alert event:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Temporarily mute alert rule
+  async muteRuleTemporarily(params) {
+    try {
+      const rule = await this.getRule(params.ruleId);
+      if (!rule) {
+        return { success: false, error: 'Rule not found' };
+      }
+
+      await redisClient.client.hSet(
+        `alert:rule:${params.ruleId}`,
+        'muted_until',
+        params.mutedUntil
+      );
+      await redisClient.client.hSet(
+        `alert:rule:${params.ruleId}`,
+        'muted_by',
+        params.mutedBy
+      );
+      await redisClient.client.hSet(
+        `alert:rule:${params.ruleId}`,
+        'mute_reason',
+        params.muteReason
+      );
+      await redisClient.client.hSet(
+        `alert:rule:${params.ruleId}`,
+        'updatedAt',
+        new Date().toISOString()
+      );
+
+      logger.info(`Alert rule muted temporarily: ${params.ruleId}`);
+      return {
+        success: true,
+        data: {
+          ok: true,
+          ruleId: params.ruleId,
+          mutedUntil: params.mutedUntil
+        }
+      };
+    } catch (error) {
+      logger.error('Error muting alert rule temporarily:', error);
       return { success: false, error: error.message };
     }
   }

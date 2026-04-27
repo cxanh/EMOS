@@ -1,4 +1,3 @@
-import request from './index'
 import axios from 'axios'
 
 // 创建一个专门用于AI请求的axios实例，超时时间更长
@@ -95,19 +94,49 @@ export interface Recommendations {
   analyzedAt: string
 }
 
+export interface FollowUpAnalysis {
+  answer: string
+  recommendActions?: Array<{
+    title: string
+    description: string
+  }>
+  analyzedAt: string
+}
+
+export type OverviewNavigateTarget = 'health' | 'trend' | 'recommendations' | 'ai-ops' | 'ai-chat'
+
+export interface OverviewRecommendedAction {
+  type: 'navigate'
+  target: OverviewNavigateTarget
+  label: string
+}
+
+export interface OverviewQuestionResult {
+  answer: string
+  riskPoints: string[]
+  nextSteps: string[]
+  recommendedActions?: OverviewRecommendedAction[]
+  analyzedAt: string
+}
+
+export interface OverviewQuestionClientHints {
+  nodeId?: string
+  timeRange?: string
+}
+
 // Get AI service status
 export const getAIStatus = () => {
-  return aiRequest.get<{ success: boolean; data: AIStatus }>('/ai/status')
+  return aiRequest.get<any, { success: boolean; data: AIStatus }>('/ai/status')
 }
 
 // Analyze system health
 export const analyzeSystemHealth = () => {
-  return aiRequest.post<{ success: boolean; data: HealthAnalysis }>('/ai/analyze/health')
+  return aiRequest.post<any, { success: boolean; data: HealthAnalysis }>('/ai/analyze/health')
 }
 
 // Analyze performance trend
 export const analyzeTrend = (nodeId: string, timeRange: string = '24h') => {
-  return aiRequest.post<{ success: boolean; data: TrendAnalysis }>('/ai/analyze/trend', {
+  return aiRequest.post<any, { success: boolean; data: TrendAnalysis }>('/ai/analyze/trend', {
     nodeId,
     timeRange
   })
@@ -115,5 +144,23 @@ export const analyzeTrend = (nodeId: string, timeRange: string = '24h') => {
 
 // Get optimization recommendations
 export const getRecommendations = () => {
-  return aiRequest.post<{ success: boolean; data: Recommendations }>('/ai/analyze/recommendations')
+  return aiRequest.post<any, { success: boolean; data: Recommendations }>('/ai/analyze/recommendations')
+}
+
+// Ask follow-up question
+export const analyzeFollowUp = (question: string, contextSummary: string, analysisType: string) => {
+  return aiRequest.post<any, { success: boolean; data: FollowUpAnalysis }>('/ai/analyze/follow-up', {
+    question,
+    contextSummary,
+    analysisType
+  })
+}
+
+// Ask system overview question on AIAnalysis homepage
+export const analyzeOverviewQuestion = (question: string, clientHints?: OverviewQuestionClientHints) => {
+  return aiRequest.post<any, { success: boolean; data: OverviewQuestionResult }>('/ai/analyze/overview-question', {
+    question,
+    contextType: 'system-overview',
+    clientHints
+  })
 }

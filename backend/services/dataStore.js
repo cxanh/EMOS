@@ -9,7 +9,7 @@ class DataStoreService {
   async initialize() {
     try {
       await redisClient.connect();
-      influxClient.connect();
+      await influxClient.connect();
       this.initialized = true;
       console.log('Data Store Service Initialized');
     } catch (error) {

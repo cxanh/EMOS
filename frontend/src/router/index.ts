@@ -45,6 +45,24 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/ai-chat-analysis',
+    name: 'AIChatAnalysis',
+    component: () => import('@/views/AIChatAnalysis.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/ai-ops-assistant',
+    name: 'AIOpsAssistant',
+    component: () => import('@/views/AIOpsAssistant.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/skill-catalog',
+    name: 'SkillCatalog',
+    component: () => import('@/views/SkillCatalog.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import('@/views/Settings.vue'),
@@ -88,7 +106,7 @@ const router = createRouter({
 });
 
 // 路由守卫
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore();
   const requiresAuth = to.meta.requiresAuth;
   const requiresAdmin = to.meta.requiresAdmin;
