@@ -448,12 +448,14 @@ import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
 import { useAISettingsStore, type SystemAISettingsForm, type UserAISettingsForm } from '@/stores/aiSettings'
+import { useAIStore } from '@/stores/ai'
 
 type TabKey = 'account' | 'ai'
 type BannerType = 'success' | 'error' | 'info' | 'warning'
 
 const userStore = useUserStore()
 const aiSettingsStore = useAISettingsStore()
+const aiStore = useAIStore()
 
 const activeTab = ref<TabKey>('account')
 
@@ -717,6 +719,9 @@ const handleSaveSystemSettings = async () => {
     if (aiSettingsStore.loaded) {
       syncFormsFromSettings()
     }
+
+    // 刷新 AI 状态，使 AIAnalysis 页面能看到新配置
+    await aiStore.fetchStatus()
 
     systemMessage.value = {
       type: result.skipped ? 'info' : 'success',

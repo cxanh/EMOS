@@ -321,7 +321,8 @@ function normalizeUserUpdates(payload) {
 
 function createAiSettingsService({
   store = createAiSettingsStore(),
-  now = () => new Date().toISOString()
+  now = () => new Date().toISOString(),
+  aiService = null
 } = {}) {
   async function resolveSystemSettings() {
     const persisted = await store.getSystemSettings();
@@ -454,6 +455,11 @@ function createAiSettingsService({
         updatedAt: now(),
         updatedBy: getActorId(actor)
       });
+
+      // Re-initialize AIService with new settings if it's provided
+      if (aiService && typeof aiService.reinitializeWithSettings === 'function') {
+        aiService.reinitializeWithSettings(normalized);
+      }
 
       return this.getSettingsForUser(actor);
     },

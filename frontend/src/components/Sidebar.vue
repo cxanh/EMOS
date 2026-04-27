@@ -52,6 +52,12 @@ const navItems = [
     path: '/ai-analysis'
   },
   {
+    id: 'skill-catalog',
+    label: 'AI 能力目录',
+    icon: '📚',
+    path: '/skill-catalog'
+  },
+  {
     id: 'network',
     label: '网速测试',
     icon: '🌐',
@@ -136,14 +142,8 @@ watch(collapsed, (newValue) => {
     <!-- 导航菜单 -->
     <nav class="sidebar-nav">
       <ul>
-        <li
-          v-for="item in navItems"
-          v-show="!item.adminOnly || userStore.user?.role === 'admin'"
-          :key="item.id"
-          class="nav-item"
-          :class="{ active: activeItem === item.id }"
-          @click="selectNavItem(item)"
-        >
+        <li v-for="item in navItems" v-show="!item.adminOnly || userStore.user?.role === 'admin'" :key="item.id"
+          class="nav-item" :class="{ active: activeItem === item.id }" @click="selectNavItem(item)">
           <span class="nav-icon">{{ item.icon }}</span>
           <span v-if="!collapsed" class="nav-label">{{ item.label }}</span>
         </li>

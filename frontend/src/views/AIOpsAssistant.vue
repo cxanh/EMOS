@@ -1,8 +1,24 @@
 <template>
   <div class="ai-ops-page">
     <div class="page-header">
-      <h1>AI Ops 助手</h1>
-      <p class="subtitle">Phase 1A 试运行与执行闭环</p>
+      <div class="header-titles">
+        <button class="back-btn" @click="goBack" title="返回 AI 分析工作台">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        <div>
+          <h1>AI 操作助手 <span class="badge">工作台</span></h1>
+          <p class="subtitle">AI Ops Phase 1A / 动作试运行与执行验证闭环</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-outline" @click="goBack" title="返回上一步">返回分析工作台</button>
+        <button class="btn-outline danger-outline" @click="router.push('/ai-analysis')" title="退出工作台">退出 AI Ops
+          工作台</button>
+      </div>
     </div>
 
     <div class="info-card">
@@ -120,7 +136,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { ActionId, ActionRequestInput, DryRunResult, ActionRequestStatus } from '@/api/aiOps'
 import { useAiOpsStore } from '@/stores/aiOps'
 import ActionRecommendationList from '@/components/ai-ops/ActionRecommendationList.vue'
@@ -130,6 +146,11 @@ import ExecutionResultCard from '@/components/ai-ops/ExecutionResultCard.vue'
 
 const store = useAiOpsStore()
 const route = useRoute()
+const router = useRouter()
+
+const goBack = () => {
+  router.push('/ai-chat-analysis')
+}
 
 const recommendations = ref<Array<{ title: string; actionId: ActionId; riskLevel: string }>>([
   {
@@ -338,15 +359,104 @@ const confirmExecution = async () => {
 <style scoped>
 .ai-ops-page {
   padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
 }
 
 .page-header {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.header-titles {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
 }
 
 .subtitle {
-  color: #6b7280;
-  margin-top: 4px;
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.danger-outline {
+  color: #ef4444;
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.danger-outline:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #dc2626;
 }
 
 .info-card {

@@ -132,6 +132,68 @@ class AIService {
     };
   }
 
+  // Re-initialize with provided settings (used when settings are updated)
+  reinitializeWithSettings(settings) {
+    try {
+      if (settings.provider) {
+        this.provider = settings.provider.toLowerCase().trim();
+      }
+
+      if (this.provider === 'ollama') {
+        this.baseURL = settings.baseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+        this.model = settings.model || process.env.OLLAMA_MODEL || 'llama2';
+        this.apiKey = null;
+        this.openaiClient = null;
+      } else {
+        const providerPrefix = this.getProviderEnvPrefix(this.provider);
+        const preset = this.getOpenAICompatiblePreset(this.provider);
+
+        this.apiKey = settings.apiKey ||
+          process.env.LLM_API_KEY ||
+          process.env[`${providerPrefix}_API_KEY`] ||
+          (this.provider === 'openai' ? process.env.OPENAI_API_KEY : null);
+
+        this.baseURL = settings.baseUrl ||
+          process.env.LLM_BASE_URL ||
+          process.env[`${providerPrefix}_BASE_URL`] ||
+          (this.provider === 'openai' ? process.env.OPENAI_BASE_URL : null) ||
+          preset?.baseURL ||
+          'https://api.openai.com/v1';
+
+        this.model = settings.model ||
+          process.env.LLM_MODEL ||
+          process.env[`${providerPrefix}_MODEL`] ||
+          (this.provider === 'openai' ? process.env.OPENAI_MODEL : null) ||
+          preset?.model ||
+          'gpt-4o-mini';
+
+        if (!this.apiKey) {
+          logger.warn(`${this.provider} API key not configured`);
+          this.enabled = false;
+          return this;
+        }
+
+        this.openaiClient = new OpenAI({
+          apiKey: this.apiKey,
+          baseURL: this.baseURL
+        });
+      }
+
+      if (settings.enabled !== undefined) {
+        this.enabled = settings.enabled;
+      } else {
+        this.enabled = true;
+      }
+
+      logger.info(`AI Service Re-initialized (Provider: ${this.provider}, Model: ${this.model})`);
+      return this;
+    } catch (error) {
+      logger.error('Failed to re-initialize AI Service:', error.message);
+      this.enabled = false;
+      return this;
+    }
+  }
+
   // Analyze system health
   async analyzeSystemHealth() {
     if (!this.enabled) {

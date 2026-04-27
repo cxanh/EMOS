@@ -8,7 +8,11 @@
       </div>
       <div class="header-right">
         <button class="btn-ghost" type="button" @click="startNewSession">
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
           新建会话
         </button>
         <router-link class="btn-outline" to="/ai-analysis">退出工作台</router-link>
@@ -18,13 +22,8 @@
     <div class="workbench-body">
       <!-- 主聊天区 -->
       <main class="chat-main">
-        <ChatContextBar
-          class="compact-context-bar"
-          :context="chatStore.context"
-          :status="chatStore.aiStatus"
-          :loading-status="chatStore.loadingStatus"
-          @update:context="handleContextUpdate"
-        />
+        <ChatContextBar class="compact-context-bar" :context="chatStore.context" :status="chatStore.aiStatus"
+          :loading-status="chatStore.loadingStatus" @update:context="handleContextUpdate" />
 
         <div v-if="chatStore.error" class="error-banner">
           <span>{{ chatStore.error }}</span>
@@ -32,32 +31,50 @@
         </div>
 
         <div class="chat-scroll-area">
-          <ChatMessageList :messages="chatStore.messages" />
+          <div class="chat-content-container">
+            <ChatMessageList :messages="chatStore.messages" />
+          </div>
         </div>
 
         <div class="chat-composer-wrap">
           <form class="chat-composer" @submit.prevent="submitQuestion">
             <div class="composer-quick-actions">
               <button type="button" class="btn-pill" @click="useSuggestedQuestion('请总结当前风险和优先处理项')">
-                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
                 风险总结
               </button>
               <button type="button" class="btn-pill" @click="useSuggestedQuestion('推荐哪些动作适合先做 dry-run？')">
-                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
                 动作建议
               </button>
             </div>
             <div class="composer-input-area">
-              <textarea
-                v-model.trim="question"
-                :disabled="chatStore.submitting"
-                placeholder="在此输入您要分析的问题，例如：这个节点近期的主要风险是什么..."
-                rows="2"
-                @keydown.enter.exact.prevent="submitQuestion"
-              ></textarea>
+              <textarea v-model.trim="question" :disabled="chatStore.submitting"
+                placeholder="在此输入您要分析的问题，例如：这个节点近期的主要风险是什么..." rows="2"
+                @keydown.enter.exact.prevent="submitQuestion"></textarea>
               <button type="submit" class="btn-send" :disabled="chatStore.submitting || !question.trim()">
-                <svg v-if="chatStore.submitting" class="spin" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="4.93" x2="19.07" y2="7.76"></line></svg>
-                <svg v-else viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                <svg v-if="chatStore.submitting" class="spin" viewBox="0 0 24 24" width="20" height="20"
+                  stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="2" x2="12" y2="6"></line>
+                  <line x1="12" y1="18" x2="12" y2="22"></line>
+                  <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                  <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                  <line x1="2" y1="12" x2="6" y2="12"></line>
+                  <line x1="18" y1="12" x2="22" y2="12"></line>
+                  <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                  <line x1="16.24" y1="4.93" x2="19.07" y2="7.76"></line>
+                </svg>
+                <svg v-else viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2"
+                  fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
               </button>
             </div>
           </form>
@@ -69,11 +86,13 @@
         <div class="sidebar-section">
           <div class="section-header">
             <h3>概览</h3>
-            <span class="meta-tag" v-if="chatStore.currentSession">{{ chatStore.currentSession.messageCount }} 条消息</span>
+            <span class="meta-tag" v-if="chatStore.currentSession">{{ chatStore.currentSession.messageCount }}
+              条消息</span>
           </div>
           <div class="dense-meta-card" v-if="chatStore.currentSession">
             <h4 class="truncate">{{ chatStore.currentSession.title || '当前上下文会话' }}</h4>
-            <div class="meta-item"><span>ID:</span> <code>{{ chatStore.currentSession.sessionId.split('-')[0] }}...</code></div>
+            <div class="meta-item"><span>ID:</span>
+              <code>{{ chatStore.currentSession.sessionId.split('-')[0] }}...</code></div>
             <div class="meta-item"><span>时间:</span> {{ formatTime(chatStore.currentSession.updatedAt) }}</div>
           </div>
           <div class="dense-empty" v-else>暂无进行中的会话</div>
@@ -83,20 +102,20 @@
           <div class="section-header">
             <h3>历史记录</h3>
             <button class="btn-icon" @click="refreshRecentSessions" title="获取最新">
-              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
             </button>
           </div>
           <div class="history-list">
             <div v-if="chatStore.loadingSessions" class="dense-empty">加载中...</div>
             <div v-else-if="!chatStore.sessions.length" class="dense-empty">暂无历史会话</div>
-            <div
-              v-else
-              v-for="session in chatStore.sessions"
-              :key="session.sessionId"
-              class="history-item"
+            <div v-else v-for="session in chatStore.sessions" :key="session.sessionId" class="history-item"
               :class="{ 'is-active': session.sessionId === chatStore.currentSession?.sessionId }"
-              @click="openSession(session.sessionId)"
-            >
+              @click="openSession(session.sessionId)">
               <div class="history-item-title truncate">{{ session.title || '快捷分析任务' }}</div>
               <div class="history-item-meta">
                 <span>{{ formatTimeShort(session.updatedAt) }}</span>
@@ -219,6 +238,8 @@ const formatTimeShort = (value: string) => {
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  z-index: 10;
 }
 
 .header-left {
@@ -302,13 +323,17 @@ const formatTimeShort = (value: string) => {
 }
 
 .compact-context-bar {
-  margin: 16px 24px 0;
+  margin: 16px auto 0;
+  width: calc(100% - 48px);
+  max-width: 800px;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
 }
 
 .error-banner {
-  margin: 16px 24px 0;
+  margin: 16px auto 0;
+  width: calc(100% - 48px);
+  max-width: 800px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -332,12 +357,22 @@ const formatTimeShort = (value: string) => {
   flex: 1;
   overflow-y: auto;
   padding: 24px;
+  scroll-behavior: smooth;
+}
+
+.chat-content-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .chat-composer-wrap {
-  padding: 0 24px 24px;
-  background: linear-gradient(180deg, transparent 0%, #f8fafc 20%);
+  padding: 16px 24px 24px;
+  background: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
   flex-shrink: 0;
+  z-index: 5;
 }
 
 .chat-composer {
@@ -432,19 +467,26 @@ const formatTimeShort = (value: string) => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 侧边信息区 */
 .workbench-sidebar {
-  width: 300px;
+  width: 320px;
   display: flex;
   flex-direction: column;
   background: #ffffff;
   border-left: 1px solid #e2e8f0;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.02);
   flex-shrink: 0;
   height: 100%;
+  z-index: 5;
 }
 
 .sidebar-section {
@@ -474,7 +516,8 @@ const formatTimeShort = (value: string) => {
   color: #334155;
 }
 
-.meta-tag, .range-tag {
+.meta-tag,
+.range-tag {
   padding: 2px 6px;
   border-radius: 4px;
   background: #f1f5f9;
@@ -587,18 +630,40 @@ const formatTimeShort = (value: string) => {
     height: auto;
     min-height: 100vh;
   }
+
   .workbench-body {
     flex-direction: column;
     overflow: visible;
   }
+
   .chat-scroll-area {
     overflow-y: visible;
   }
+
   .workbench-sidebar {
     width: 100%;
     border-left: none;
     border-top: 1px solid #e2e8f0;
     height: auto;
   }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 </style>

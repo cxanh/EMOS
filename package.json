@@ -28,6 +28,8 @@
     "concurrently": "^7.6.0",
     "electron": "^20.3.10",
     "electron-builder": "^23.6.0",
+    "playwright": "^1.59.1",
+    "tsx": "^4.21.0",
     "wait-on": "^7.0.1"
   }
 }

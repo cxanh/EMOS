@@ -26,6 +26,7 @@ const aiRoutes = require('./routes/ai');
 const { createAiV2Router } = require('./routes/aiV2');
 const { createAiChatRouter } = require('./routes/aiChat');
 const { createAiSettingsRouter } = require('./routes/aiSettings');
+const { createSkillCatalogRouter } = require('./routes/skillCatalog');
 const usersRoutes = require('./routes/users');
 const reportsRoutes = require('./routes/reports');
 
@@ -68,6 +69,10 @@ function createApp({ skipRequestLogging = false } = {}) {
     authenticateRequest: authenticateToken
   }));
   app.use('/api/ai/v2/settings', createAiSettingsRouter({
+    authenticateRequest: authenticateToken,
+    aiService: aiService
+  }));
+  app.use('/api/ai/v2/skills', createSkillCatalogRouter({
     authenticateRequest: authenticateToken
   }));
   app.use('/api/users', usersRoutes);

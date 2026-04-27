@@ -7,12 +7,14 @@ const { createAiSettingsService } = require('../services/aiSettingsService');
 function createAiSettingsRouter({
   redisClient,
   authenticateRequest = (req, res, next) => next(),
-  aiSettingsService = createAiSettingsService({
+  aiService = null
+} = {}) {
+  const aiSettingsService = createAiSettingsService({
     store: createAiSettingsStore({
       redisClient
-    })
-  })
-} = {}) {
+    }),
+    aiService: aiService
+  });
   const router = express.Router();
 
   router.use(authenticateRequest);
