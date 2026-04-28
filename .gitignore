@@ -70,8 +70,7 @@ graduation_design/
 *.xls
 *.xlsx
 video-assets/
-video/*
-!video/README.md
+video/
 
 # Local AI/editor work notes
 .trae/
@@ -89,7 +88,6 @@ FIX_*.bat
 URGENT_*.md
 frontend/fix-nodes-error.js
 scripts/video/*
-!scripts/video/capture-emos.mts
 
 # ==================== Temporary Files ====================
 *.tmp
