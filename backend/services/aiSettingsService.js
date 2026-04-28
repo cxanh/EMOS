@@ -458,7 +458,17 @@ function createAiSettingsService({
 
       // Re-initialize AIService with new settings if it's provided
       if (aiService && typeof aiService.reinitializeWithSettings === 'function') {
-        aiService.reinitializeWithSettings(normalized);
+        // 【FIX】获取完整的系统设置后再调用 reinitializeWithSettings
+        // 这确保 aiService 能获得所有必要的配置，而不仅仅是用户改变的字段
+        const persistedSettings = await store.getSystemSettings();
+        const completeSettings = {
+          provider: normalized.provider !== undefined ? normalized.provider : persistedSettings.provider,
+          model: normalized.model !== undefined ? normalized.model : persistedSettings.model,
+          baseUrl: normalized.baseUrl !== undefined ? normalized.baseUrl : persistedSettings.baseUrl,
+          apiKey: normalized.apiKey !== undefined ? normalized.apiKey : persistedSettings.apiKey,
+          enabled: normalized.enabled !== undefined ? normalized.enabled : persistedSettings.enabled
+        };
+        aiService.reinitializeWithSettings(completeSettings);
       }
 
       return this.getSettingsForUser(actor);

@@ -124,21 +124,25 @@ class AIService {
 
   // Get runtime status
   getStatus() {
-    return {
+    const status = {
       enabled: this.enabled,
       provider: this.provider,
       model: this.model,
       baseURL: this.baseURL
     };
+    logger.debug(`[AI Service] getStatus() called, returning: ${JSON.stringify(status)}`);
+    return status;
   }
 
   // Re-initialize with provided settings (used when settings are updated)
   reinitializeWithSettings(settings) {
     try {
+      // Update provider if provided
       if (settings.provider) {
         this.provider = settings.provider.toLowerCase().trim();
       }
 
+      // Update based on provider
       if (this.provider === 'ollama') {
         this.baseURL = settings.baseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
         this.model = settings.model || process.env.OLLAMA_MODEL || 'llama2';
@@ -170,6 +174,7 @@ class AIService {
         if (!this.apiKey) {
           logger.warn(`${this.provider} API key not configured`);
           this.enabled = false;
+          logger.info(`AI Service Re-initialization Failed: ${this.provider} API key not configured`);
           return this;
         }
 
@@ -179,16 +184,17 @@ class AIService {
         });
       }
 
+      // Update enabled status if provided
       if (settings.enabled !== undefined) {
         this.enabled = settings.enabled;
       } else {
         this.enabled = true;
       }
 
-      logger.info(`AI Service Re-initialized (Provider: ${this.provider}, Model: ${this.model})`);
+      logger.info(`[AI Service] Re-initialized successfully (Provider: ${this.provider}, Model: ${this.model}, BaseURL: ${this.baseURL})`);
       return this;
     } catch (error) {
-      logger.error('Failed to re-initialize AI Service:', error.message);
+      logger.error('[AI Service] Failed to re-initialize:', error.message);
       this.enabled = false;
       return this;
     }
