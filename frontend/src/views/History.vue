@@ -1,7 +1,7 @@
 <template>
   <div class="history">
     <h1>历史数据查询</h1>
-    
+
     <!-- 节点选择 -->
     <div class="query-section">
       <div class="form-group">
@@ -13,10 +13,10 @@
           </option>
         </select>
       </div>
-      
+
       <!-- 时间范围选择 -->
       <TimeRangePicker @change="handleTimeRangeChange" />
-      
+
       <!-- 查询按钮 -->
       <div class="query-actions">
         <button @click="queryHistory" :disabled="!selectedNodeId || loading" class="query-btn">
@@ -27,19 +27,19 @@
         </button>
       </div>
     </div>
-    
+
     <!-- 加载状态 -->
     <div v-if="loading" class="loading">
       <div class="loading-spinner"></div>
       <p>正在查询历史数据...</p>
     </div>
-    
+
     <!-- 错误提示 -->
     <div v-else-if="error" class="error">
       <p>{{ error }}</p>
       <button @click="queryHistory">重试</button>
     </div>
-    
+
     <!-- 数据展示 -->
     <div v-else-if="historyData.length > 0" class="data-section">
       <!-- 统计信息 -->
@@ -61,7 +61,7 @@
           <div class="stat-value">{{ avgDisk.toFixed(2) }}%</div>
         </div>
       </div>
-      
+
       <!-- 图表展示 -->
       <div class="charts-section">
         <div class="chart-container">
@@ -77,7 +77,7 @@
           <div ref="networkChartRef" class="chart"></div>
         </div>
       </div>
-      
+
       <!-- 数据表格 -->
       <div class="table-section">
         <h3>数据详情</h3>
@@ -107,7 +107,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 空状态 -->
     <div v-else class="empty">
       <div class="empty-icon">📊</div>
@@ -142,6 +142,17 @@ let memoryChart: echarts.ECharts | null = null;
 let diskChart: echarts.ECharts | null = null;
 let networkChart: echarts.ECharts | null = null;
 
+const disposeCharts = () => {
+  cpuChart?.dispose();
+  memoryChart?.dispose();
+  diskChart?.dispose();
+  networkChart?.dispose();
+  cpuChart = null;
+  memoryChart = null;
+  diskChart = null;
+  networkChart = null;
+};
+
 // 计算平均值
 const avgCpu = computed(() => {
   if (!historyData.value.length) return 0;
@@ -164,12 +175,14 @@ const avgDisk = computed(() => {
 const handleNodeChange = () => {
   historyData.value = [];
   error.value = '';
+  disposeCharts();
 };
 
 const handleTimeRangeChange = (range: { startTime: string; endTime: string; label: string }) => {
   timeRange.value = range;
   historyData.value = [];
   error.value = '';
+  disposeCharts();
 };
 
 const queryHistory = async () => {
@@ -177,15 +190,15 @@ const queryHistory = async () => {
     error.value = '请选择节点';
     return;
   }
-  
+
   if (!timeRange.value.startTime || !timeRange.value.endTime) {
     error.value = '请选择时间范围';
     return;
   }
-  
+
   loading.value = true;
   error.value = '';
-  
+
   try {
     const response = await getHistoryMetrics({
       nodeId: selectedNodeId.value,
@@ -193,31 +206,42 @@ const queryHistory = async () => {
       endTime: timeRange.value.endTime,
       interval: '1m'
     });
-    
+
     if (response.success) {
-      historyData.value = response.data.metrics;
-      await nextTick();
-      initCharts();
+      historyData.value = response.data.metrics || [];
     } else {
+      historyData.value = [];
       error.value = '查询失败，请重试';
     }
   } catch (err: any) {
     console.error('Query error:', err);
+    historyData.value = [];
     error.value = err.response?.data?.error?.message || '查询失败，请检查网络连接';
   } finally {
     loading.value = false;
   }
+
+  if (!error.value && historyData.value.length > 0) {
+    await initCharts();
+  }
 };
 
-const initCharts = () => {
+const initCharts = async () => {
+  // 确保 DOM 已完全渲染
+  await nextTick();
+
+  // 销毁已存在的图表实例
+  disposeCharts();
+
   const timeLabels = historyData.value.map(item => formatTime(item.timestamp));
-  
+
   // CPU 图表
   if (cpuChartRef.value) {
     cpuChart = echarts.init(cpuChartRef.value);
     cpuChart.setOption({
       title: { text: 'CPU 使用率历史', left: 'center' },
       tooltip: { trigger: 'axis' },
+      grid: { left: '5%', right: '5%', top: '15%', bottom: '15%', containLabel: true },
       xAxis: {
         type: 'category',
         data: timeLabels,
@@ -236,14 +260,16 @@ const initCharts = () => {
         areaStyle: { opacity: 0.3 }
       }]
     });
+    cpuChart.resize();
   }
-  
+
   // 内存图表
   if (memoryChartRef.value) {
     memoryChart = echarts.init(memoryChartRef.value);
     memoryChart.setOption({
       title: { text: '内存使用率历史', left: 'center' },
       tooltip: { trigger: 'axis' },
+      grid: { left: '5%', right: '5%', top: '15%', bottom: '15%', containLabel: true },
       xAxis: {
         type: 'category',
         data: timeLabels,
@@ -262,14 +288,16 @@ const initCharts = () => {
         areaStyle: { opacity: 0.3 }
       }]
     });
+    memoryChart.resize();
   }
-  
+
   // 磁盘图表
   if (diskChartRef.value) {
     diskChart = echarts.init(diskChartRef.value);
     diskChart.setOption({
       title: { text: '磁盘使用率历史', left: 'center' },
       tooltip: { trigger: 'axis' },
+      grid: { left: '5%', right: '5%', top: '15%', bottom: '15%', containLabel: true },
       xAxis: {
         type: 'category',
         data: timeLabels,
@@ -288,8 +316,9 @@ const initCharts = () => {
         areaStyle: { opacity: 0.3 }
       }]
     });
+    diskChart.resize();
   }
-  
+
   // 网络图表
   if (networkChartRef.value) {
     networkChart = echarts.init(networkChartRef.value);
@@ -297,6 +326,7 @@ const initCharts = () => {
       title: { text: '网络流量历史', left: 'center' },
       tooltip: { trigger: 'axis' },
       legend: { data: ['接收', '发送'], bottom: 10 },
+      grid: { left: '5%', right: '5%', top: '15%', bottom: '15%', containLabel: true },
       xAxis: {
         type: 'category',
         data: timeLabels,
@@ -323,6 +353,7 @@ const initCharts = () => {
         }
       ]
     });
+    networkChart.resize();
   }
 };
 
@@ -339,7 +370,7 @@ const formatTime = (timestamp: string) => {
 
 const exportData = () => {
   if (!historyData.value.length) return;
-  
+
   // 生成 CSV
   const headers = ['时间', 'CPU(%)', '内存(%)', '磁盘(%)', '网络接收(MB)', '网络发送(MB)'];
   const rows = historyData.value.map(item => [
@@ -350,7 +381,7 @@ const exportData = () => {
     (item.network_rx_bytes / 1024 / 1024).toFixed(2) || '-',
     (item.network_tx_bytes / 1024 / 1024).toFixed(2) || '-'
   ]);
-  
+
   const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -359,22 +390,21 @@ const exportData = () => {
   link.click();
 };
 
+const handleResize = () => {
+  cpuChart?.resize();
+  memoryChart?.resize();
+  diskChart?.resize();
+  networkChart?.resize();
+};
+
 onMounted(() => {
   nodesStore.fetchNodes();
-  
-  window.addEventListener('resize', () => {
-    cpuChart?.resize();
-    memoryChart?.resize();
-    diskChart?.resize();
-    networkChart?.resize();
-  });
+  window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
-  cpuChart?.dispose();
-  memoryChart?.dispose();
-  diskChart?.dispose();
-  networkChart?.dispose();
+  window.removeEventListener('resize', handleResize);
+  disposeCharts();
 });
 </script>
 
@@ -488,8 +518,13 @@ h3 {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error {
@@ -579,7 +614,8 @@ h3 {
 
 .chart {
   width: 100%;
-  height: 300px;
+  height: 350px;
+  min-height: 350px;
 }
 
 .table-section {
@@ -599,7 +635,8 @@ table {
   margin-top: 15px;
 }
 
-th, td {
+th,
+td {
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #f0f0f0;
@@ -625,11 +662,11 @@ tr:hover {
   .query-actions {
     flex-direction: column;
   }
-  
+
   .stats-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .charts-section {
     grid-template-columns: 1fr;
   }
