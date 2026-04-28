@@ -59,10 +59,37 @@ ENV/
 agent/__pycache__/
 agent/collectors/__pycache__/
 
-# ==================== Graduation Design (Private) ====================
-# 毕业设计相关文档（包含个人信息，不上传）
+# ==================== Graduation Design / Local Materials ====================
+# 毕设材料、演示素材、录屏产物和个人信息文件，不影响项目运行
 graduation_design/
-蔡轩-22物联01班-长沙学院毕业设计课题申报表(2026届版).xls
+*.doc
+*.docx
+*.ppt
+*.pptx
+*.pdf
+*.xls
+*.xlsx
+video-assets/
+video/*
+!video/README.md
+
+# Local AI/editor work notes
+.trae/
+docs/archive/
+docs/adr/ADR-*.md
+docs/ai-ops/BATCH_*.md
+docs/superpowers/plans/
+docs/**/LOGIN_CREDENTIALS.md
+docs/**/*CREDENTIAL*.md
+
+# One-off local maintenance / emergency scripts
+cleanup.ps1
+fix-*.bat
+FIX_*.bat
+URGENT_*.md
+frontend/fix-nodes-error.js
+scripts/video/*
+!scripts/video/capture-emos.mts
 
 # ==================== Temporary Files ====================
 *.tmp
